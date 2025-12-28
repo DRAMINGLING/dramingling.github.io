@@ -21,6 +21,7 @@
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             padding: 20px;
             color: #333;
+            position: relative;
         }
         
         .container {
@@ -128,6 +129,44 @@
             text-decoration: underline;
         }
         
+        /* 新增：右下角固定定位的文本和链接 */
+        .footer-note {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            font-size: 0.85rem;
+            color: #555;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(74, 111, 165, 0.1);
+        }
+        
+        .footer-note:hover {
+            background-color: rgba(255, 255, 255, 1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        .footer-note a {
+            color: #4a6fa5;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .footer-note a:hover {
+            background-color: rgba(74, 111, 165, 0.1);
+            text-decoration: underline;
+        }
+        
         @media (max-width: 600px) {
             .container {
                 padding: 25px;
@@ -141,6 +180,16 @@
                 padding: 12px 25px;
                 font-size: 1.1rem;
             }
+            
+            /* 移动端调整右下角元素 */
+            .footer-note {
+                bottom: 15px;
+                right: 15px;
+                left: 15px;
+                justify-content: center;
+                padding: 10px 15px;
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
@@ -152,14 +201,18 @@
             点击下方按钮可以直接访问该PDF文件。
         </p>
         
-        
-        
         <a href="https://dramingling.github.io/Documents/Note%20for%20Algebraic%20Varieties.pdf" 
            class="pdf-link" 
            target="_blank">
             <span class="pdf-icon">📘</span> Note for Algebraic Varieties.pdf
         </a>
         
+    </div>
+    
+    <!-- 新增：右下角的文本和链接 -->
+    <div class="footer-note">
+        <span>Any issue is welcome!</span>
+        <a href="https://github.com/DRAMINGLING" target="_blank">My github homepage</a>
     </div>
     
     <script>
@@ -189,6 +242,17 @@
                 container.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
                 container.style.opacity = '1';
                 container.style.transform = 'translateY(0)';
+            }, 100);
+            
+            // 右下角元素也添加淡入动画
+            const footerNote = document.querySelector('.footer-note');
+            footerNote.style.opacity = '0';
+            footerNote.style.transform = 'translateX(20px)';
+            
+            setTimeout(() => {
+                footerNote.style.transition = 'opacity 0.8s ease 0.3s, transform 0.8s ease 0.3s';
+                footerNote.style.opacity = '1';
+                footerNote.style.transform = 'translateX(0)';
             }, 100);
         });
     </script>
