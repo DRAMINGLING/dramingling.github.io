@@ -1,7 +1,210 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>访问代数簇笔记PDF文件</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 2.2rem;
+        }
+        
+        .description {
+            color: #555;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        
+        .file-info {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: left;
+            border-left: 4px solid #4a6fa5;
+        }
+        
+        .file-info h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.3rem;
+        }
+        
+        .file-info ul {
+            list-style-type: none;
+            padding-left: 5px;
+        }
+        
+        .file-info li {
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+        }
+        
+        .file-info li:last-child {
+            border-bottom: none;
+        }
+        
+        .label {
+            font-weight: bold;
+            color: #4a6fa5;
+            display: inline-block;
+            width: 100px;
+        }
+        
+        .pdf-link {
+            display: inline-block;
+            background-color: #4a6fa5;
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(74, 111, 165, 0.2);
+            margin-top: 10px;
+        }
+        
+        .pdf-link:hover {
+            background-color: #3a5a80;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(74, 111, 165, 0.3);
+        }
+        
+        .pdf-link:active {
+            transform: translateY(1px);
+        }
+        
+        .pdf-icon {
+            margin-right: 10px;
+            font-size: 1.3rem;
+        }
+        
+        .note {
+            margin-top: 25px;
+            color: #777;
+            font-size: 0.9rem;
+            font-style: italic;
+            line-height: 1.5;
+        }
+        
+        .github-link {
+            color: #4a6fa5;
+            text-decoration: none;
+        }
+        
+        .github-link:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .pdf-link {
+                padding: 12px 25px;
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
 <body>
-    <h1>Hello World!</h1>
-    <p>这是我的个人主页。</p>
+    <div class="container">
+        <h1>代数簇笔记 (Algebraic Varieties)</h1>
+        
+        <p class="description">
+            这是一个链接到 GitHub 仓库中 <strong>"Note for Algebraic Varieties.pdf"</strong> 文件的简单页面。
+            点击下方按钮可以直接访问该PDF文件。
+        </p>
+        
+        <div class="file-info">
+            <h3>文件信息</h3>
+            <ul>
+                <li><span class="label">文件名：</span>Note for Algebraic Varieties.pdf</li>
+                <li><span class="label">仓库所有者：</span>DRAMINGLING</li>
+                <li><span class="label">仓库名：</span>Documents</li>
+                <li><span class="label">文件路径：</span>/Note for Algebraic Varieties.pdf</li>
+                <li><span class="label">文件类型：</span>PDF文档</li>
+            </ul>
+        </div>
+        
+        <a href="https://github.com/DRAMINGLING/Documents/raw/main/Note%20for%20Algebraic%20Varieties.pdf" 
+           class="pdf-link" 
+           target="_blank">
+            <span class="pdf-icon">📘</span> 打开代数簇笔记 (PDF)
+        </a>
+        
+        <p class="note">
+            注意：此链接直接指向 GitHub 仓库中的原始PDF文件。如果无法访问，请确认该仓库是公开的，或您有访问权限。
+            您也可以访问 <a href="https://github.com/DRAMINGLING/Documents" class="github-link" target="_blank">DRAMINGLING/Documents 仓库</a> 查看其他文件。
+        </p>
+    </div>
+    
+    <script>
+        // 简单的交互效果：点击链接时显示提示
+        document.querySelector('.pdf-link').addEventListener('click', function(e) {
+            console.log('正在打开PDF文件...');
+            
+            // 可选：添加加载指示器
+            const originalText = this.innerHTML;
+            this.innerHTML = '<span class="pdf-icon">⏳</span> 正在加载PDF...';
+            this.style.backgroundColor = '#888';
+            
+            // 3秒后恢复按钮文本（如果页面没有跳转的话）
+            setTimeout(() => {
+                this.innerHTML = originalText;
+                this.style.backgroundColor = '#4a6fa5';
+            }, 3000);
+        });
+        
+        // 页面加载完成后的简单动画
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.querySelector('.container');
+            container.style.opacity = '0';
+            container.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                container.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+                container.style.opacity = '1';
+                container.style.transform = 'translateY(0)';
+            }, 100);
+        });
+    </script>
 </body>
 </html>
