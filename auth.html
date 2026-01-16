@@ -3,234 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>个人文档库</title>
+    <title>身份验证 - 个人文档库</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        /* 保持之前的样式不变 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
-            background: #f5f7fa;
-            color: #333;
-            line-height: 1.6;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        header {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .header-left h1 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-        
-        .header-left p {
-            color: #7f8c8d;
-        }
-        
-        .logout-btn {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-        
-        .logout-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-        }
-        
-        .content-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 25px;
-        }
-        
-        .document-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s;
-            text-decoration: none;
-            color: inherit;
-            display: block;
-        }
-        
-        .document-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.1);
-        }
-        
-        .card-icon {
-            font-size: 40px;
-            margin-bottom: 15px;
-        }
-        
-        .card-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #2c3e50;
-        }
-        
-        .card-desc {
-            color: #7f8c8d;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-        
-        footer {
-            margin-top: 50px;
-            text-align: center;
-            color: #95a5a6;
-            font-size: 14px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
         }
-        
-        @media (max-width: 768px) {
-            header {
-                flex-direction: column;
-                text-align: center;
-                gap: 20px;
-            }
-            
-            .content-grid {
-                grid-template-columns: 1fr;
-            }
+        .auth-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        .logo { 
+            width: 80px; height: 80px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%; margin: 0 auto 30px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 32px; font-weight: bold;
+        }
+        h1 { color: #333; margin-bottom: 10px; }
+        .password-input {
+            width: 100%; padding: 14px 20px;
+            border: 2px solid #e1e5e9; border-radius: 12px;
+            font-size: 16px; margin: 20px 0;
+        }
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; padding: 16px;
+            width: 100%; border-radius: 12px; font-size: 16px;
+            cursor: pointer; font-weight: 600;
+        }
+        .debug-info {
+            margin-top: 20px; padding: 10px;
+            background: #f5f5f5; border-radius: 8px;
+            font-size: 12px; text-align: left;
+            display: none; /* 调试时改为 display: block */
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="header-left">
-                <h1>个人文档库</h1>
-                <p>受保护的个人文档存储空间</p>
-            </div>
-            <button id="logoutBtn" class="logout-btn">退出登录</button>
-        </header>
+    <div class="auth-container">
+        <div class="logo">🔒</div>
+        <h1>文档库访问验证</h1>
+        <p style="color: #666; margin-bottom: 20px;">请输入访问密钥查看受保护内容</p>
         
-        <main>
-            <div class="content-grid">
-                <a href="doc1.html" class="document-card">
-                    <div class="card-icon">📄</div>
-                    <div class="card-title">技术文档</div>
-                    <div class="card-desc">包含技术笔记和开发文档</div>
-                </a>
-                
-                <a href="doc2.html" class="document-card">
-                    <div class="card-icon">📓</div>
-                    <div class="card-title">学习笔记</div>
-                    <div class="card-desc">学习过程中的重要笔记</div>
-                </a>
-                
-                <a href="notes/memo.html" class="document-card">
-                    <div class="card-icon">✏️</div>
-                    <div class="card-title">备忘录</div>
-                    <div class="card-desc">重要事项和提醒</div>
-                </a>
-                
-                <a href="files/" class="document-card">
-                    <div class="card-icon">📁</div>
-                    <div class="card-title">文件目录</div>
-                    <div class="card-desc">各类文件的存储位置</div>
-                </a>
-            </div>
-        </main>
+        <input type="password" id="password" class="password-input" placeholder="请输入访问密钥" autofocus>
+        <button id="submitBtn" class="submit-btn">验证并访问</button>
         
-        <footer>
-            <p>最后更新: 2024年1月 | 版权所有 © 个人文档库</p>
-            <p>🔒 此区域受访问保护，未经授权禁止访问</p>
-        </footer>
+        <div id="error" style="color: #e74c3c; margin-top: 15px; min-height: 20px;"></div>
+        
+        <!-- 调试信息区域 -->
+        <div id="debugInfo" class="debug-info"></div>
     </div>
 
-    <!-- 验证脚本 -->
     <script>
-        // 验证函数
-        function validateAccess() {
-            // 从URL获取令牌
+        // ========== 配置部分 ==========
+        // 请设置你的密码
+        const CORRECT_PASSWORD = '2024PersonalDocs';
+        
+        // 根据你的 GitHub Pages 配置调整
+        const GITHUB_CONFIG = {
+            // 情况1: 你的仓库名是 'personal_documents'
+            basePath: '/personal_documents/',
+            
+            // 情况2: 如果使用项目站点 (username.github.io/repo-name)
+            // 并且 repo-name 不是 'personal_documents'，请修改为：
+            // basePath: '/repo-name/personal_documents/',
+            
+            // 情况3: 使用自定义域名
+            // basePath: '/personal_documents/', // 通常不变
+        };
+
+        // ========== 调试函数 ==========
+        function debugLog(message, data = '') {
+            const debugDiv = document.getElementById('debugInfo');
+            const time = new Date().toLocaleTimeString();
+            const logLine = `<div>${time}: ${message} ${data}</div>`;
+            debugDiv.innerHTML += logLine;
+            console.log(message, data);
+        }
+
+        // ========== 初始化调试 ==========
+        debugLog('页面加载完成');
+        debugLog('当前URL:', window.location.href);
+        debugLog('当前路径:', window.location.pathname);
+        debugLog('当前origin:', window.location.origin);
+
+        // ========== 获取重定向URL ==========
+        function getRedirectUrl() {
             const urlParams = new URLSearchParams(window.location.search);
-            const urlToken = urlParams.get('auth_token');
+            let redirect = urlParams.get('redirect');
             
-            // 从sessionStorage获取令牌
-            const storedToken = sessionStorage.getItem('docs_auth_token');
+            debugLog('原始redirect参数:', redirect);
             
-            // 验证令牌（使用与auth.html相同的逻辑）
-            function validateToken(token) {
-                try {
-                    const jsonString = decodeURIComponent(escape(atob(token)));
-                    const tokenData = JSON.parse(jsonString);
-                    
-                    // 检查是否过期
-                    const now = Date.now();
-                    if (now > tokenData.e) {
-                        return false;
-                    }
-                    
-                    // 检查密码是否正确（与auth.html中的密码一致）
-                    return tokenData.p === '13574271985'; // 修改为你的密码
-                } catch (error) {
-                    return false;
-                }
+            if (!redirect) {
+                // 如果没有指定重定向，默认到文档首页
+                redirect = GITHUB_CONFIG.basePath + 'index.html';
+                debugLog('使用默认重定向:', redirect);
+                return redirect;
             }
             
-            // 检查令牌是否有效
-            const isValid = (urlToken && validateToken(urlToken)) || 
-                           (storedToken && validateToken(storedToken));
-            
-            if (!isValid) {
-                // 跳转到认证页面，附带当前页面作为重定向目标
-                const authUrl = '../auth.html?redirect=' + encodeURIComponent(window.location.pathname);
-                window.location.href = authUrl;
-            } else if (urlToken && !storedToken) {
-                // 如果URL中有有效令牌但sessionStorage中没有，保存它
-                sessionStorage.setItem('docs_auth_token', urlToken);
-                sessionStorage.setItem('docs_auth_time', Date.now().toString());
+            // 清理重定向URL
+            try {
+                // 确保重定向URL是相对路径且以正确的基础路径开头
+                if (redirect.startsWith('http')) {
+                    // 如果是完整URL，提取路径部分
+                    const urlObj = new URL(redirect);
+                    redirect = urlObj.pathname + urlObj.search;
+                }
                 
-                // 移除URL中的令牌参数（避免泄露）
-                const cleanUrl = window.location.pathname;
-                window.history.replaceState({}, document.title, cleanUrl);
+                // 确保以基础路径开头
+                if (!redirect.startsWith(GITHUB_CONFIG.basePath)) {
+                    debugLog('警告: 重定向路径不以基础路径开头', redirect);
+                    redirect = GITHUB_CONFIG.basePath + redirect.replace(/^\//, '');
+                }
+                
+                debugLog('处理后的重定向路径:', redirect);
+                return redirect;
+            } catch (error) {
+                debugLog('重定向URL解析错误:', error.message);
+                return GITHUB_CONFIG.basePath + 'index.html';
             }
         }
-        
-        // 页面加载时验证
-        validateAccess();
-        
-        // 退出登录功能
-        document.getElementById('logoutBtn').addEventListener('click', function() {
-            sessionStorage.removeItem('docs_auth_token');
-            sessionStorage.removeItem('docs_auth_time');
-            window.location.href = '../auth.html';
+
+        // ========== 生成令牌 ==========
+        function generateToken() {
+            const tokenData = {
+                t: Date.now(), // 时间戳
+                e: Date.now() + (2 * 60 * 60 * 1000), // 2小时后过期
+                r: Math.random().toString(36).substr(2) // 随机数
+            };
+            
+            // 简单的Base64编码
+            const tokenString = JSON.stringify(tokenData);
+            const token = btoa(unescape(encodeURIComponent(tokenString)));
+            
+            debugLog('生成的令牌:', token.substring(0, 20) + '...');
+            return token;
+        }
+
+        // ========== 执行重定向 ==========
+        function redirectToProtectedPage(token) {
+            const redirectUrl = getRedirectUrl();
+            debugLog('最终重定向目标:', redirectUrl);
+            
+            // 构建完整的URL（处理相对路径）
+            let fullUrl;
+            if (redirectUrl.startsWith('/')) {
+                // 绝对路径
+                fullUrl = window.location.origin + redirectUrl;
+            } else {
+                // 相对路径
+                const currentPath = window.location.pathname;
+                const basePath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
+                fullUrl = window.location.origin + basePath + redirectUrl;
+            }
+            
+            // 添加令牌参数
+            const separator = fullUrl.includes('?') ? '&' : '?';
+            const finalUrl = fullUrl + separator + 'auth_token=' + encodeURIComponent(token);
+            
+            debugLog('最终访问URL:', finalUrl);
+            
+            // 存储令牌到sessionStorage（用于页面内验证）
+            sessionStorage.setItem('auth_token', token);
+            sessionStorage.setItem('auth_time', Date.now().toString());
+            
+            // 执行重定向
+            window.location.href = finalUrl;
+        }
+
+        // ========== 事件处理 ==========
+        document.getElementById('submitBtn').addEventListener('click', function() {
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error');
+            
+            errorDiv.textContent = '';
+            
+            if (!password) {
+                errorDiv.textContent = '请输入访问密钥';
+                return;
+            }
+            
+            if (password === CORRECT_PASSWORD) {
+                debugLog('密码验证成功');
+                
+                // 生成令牌
+                const token = generateToken();
+                
+                // 执行重定向
+                redirectToProtectedPage(token);
+            } else {
+                errorDiv.textContent = '访问密钥不正确，请重试';
+                document.getElementById('password').focus();
+                document.getElementById('password').select();
+            }
         });
-        
-        // 定期检查令牌有效性（每5分钟）
-        setInterval(validateAccess, 5 * 60 * 1000);
-        
-        // 监听页面可见性变化（当用户切换回标签页时验证）
-        document.addEventListener('visibilitychange', function() {
-            if (!document.hidden) {
-                validateAccess();
+
+        // 按Enter键提交
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('submitBtn').click();
+            }
+        });
+
+        // ========== 自动检测已登录状态 ==========
+        window.addEventListener('load', function() {
+            const token = sessionStorage.getItem('auth_token');
+            if (token) {
+                try {
+                    const tokenString = decodeURIComponent(escape(atob(token)));
+                    const tokenData = JSON.parse(tokenString);
+                    
+                    const now = Date.now();
+                    if (now < tokenData.e) {
+                        // 令牌未过期，直接重定向
+                        debugLog('检测到有效令牌，自动重定向');
+                        redirectToProtectedPage(token);
+                    } else {
+                        // 令牌已过期，清除
+                        debugLog('令牌已过期，清除');
+                        sessionStorage.removeItem('auth_token');
+                        sessionStorage.removeItem('auth_time');
+                    }
+                } catch (error) {
+                    debugLog('令牌解析失败:', error.message);
+                }
             }
         });
     </script>
