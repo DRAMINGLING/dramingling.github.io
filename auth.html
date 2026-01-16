@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>身份验证 - 个人文档库</title>
     <style>
-        /* 保持之前的样式不变 */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -16,6 +20,7 @@
             justify-content: center;
             padding: 20px;
         }
+        
         .auth-container {
             background: white;
             border-radius: 20px;
@@ -25,30 +30,65 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             text-align: center;
         }
-        .logo { 
-            width: 80px; height: 80px; 
+        
+        .logo {
+            width: 80px;
+            height: 80px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 50%; margin: 0 auto 30px;
-            display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 32px; font-weight: bold;
+            border-radius: 50%;
+            margin: 0 auto 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
         }
-        h1 { color: #333; margin-bottom: 10px; }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
         .password-input {
-            width: 100%; padding: 14px 20px;
-            border: 2px solid #e1e5e9; border-radius: 12px;
-            font-size: 16px; margin: 20px 0;
+            width: 100%;
+            padding: 14px 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            margin: 20px 0;
         }
+        
         .submit-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; border: none; padding: 16px;
-            width: 100%; border-radius: 12px; font-size: 16px;
-            cursor: pointer; font-weight: 600;
+            color: white;
+            border: none;
+            padding: 16px;
+            width: 100%;
+            border-radius: 12px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 600;
         }
-        .debug-info {
-            margin-top: 20px; padding: 10px;
-            background: #f5f5f5; border-radius: 8px;
-            font-size: 12px; text-align: left;
-            display: none; /* 调试时改为 display: block */
+        
+        .info-box {
+            margin-top: 25px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-size: 13px;
+            color: #666;
+            text-align: left;
+        }
+        
+        .logout-notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
         }
     </style>
 </head>
@@ -58,136 +98,200 @@
         <h1>文档库访问验证</h1>
         <p style="color: #666; margin-bottom: 20px;">请输入访问密钥查看受保护内容</p>
         
+        <div id="logoutNotice" class="logout-notice">
+            您已成功退出登录，请重新验证身份。
+        </div>
+        
         <input type="password" id="password" class="password-input" placeholder="请输入访问密钥" autofocus>
         <button id="submitBtn" class="submit-btn">验证并访问</button>
         
         <div id="error" style="color: #e74c3c; margin-top: 15px; min-height: 20px;"></div>
         
-        <!-- 调试信息区域 -->
-        <div id="debugInfo" class="debug-info"></div>
+        <div class="info-box">
+            <p><strong>注意：</strong></p>
+            <p>• 每次会话需要验证一次</p>
+            <p>• 验证信息仅保存在当前浏览器标签页</p>
+            <p>• 关闭标签页后需要重新验证</p>
+            <p>• 默认密码: <code>2024PersonalDocs</code></p>
+        </div>
     </div>
 
     <script>
         // ========== 配置部分 ==========
-        // 请设置你的密码
-        const CORRECT_PASSWORD = '13574271985';
-        
-        // 根据你的 GitHub Pages 配置调整
-        const GITHUB_CONFIG = {
-            // 情况1: 你的仓库名是 'personal_documents'
-            basePath: '/personal_documents/',
-            
-            // 情况2: 如果使用项目站点 (username.github.io/repo-name)
-            // 并且 repo-name 不是 'personal_documents'，请修改为：
-            // basePath: '/repo-name/personal_documents/',
-            
-            // 情况3: 使用自定义域名
-            // basePath: '/personal_documents/', // 通常不变
+        const CONFIG = {
+            CORRECT_PASSWORD: '13574271985',
+            BASE_PATH: '/personal_documents/',
+            TOKEN_EXPIRE_HOURS: 2
         };
 
-        // ========== 调试函数 ==========
-        function debugLog(message, data = '') {
-            const debugDiv = document.getElementById('debugInfo');
-            const time = new Date().toLocaleTimeString();
-            const logLine = `<div>${time}: ${message} ${data}</div>`;
-            debugDiv.innerHTML += logLine;
-            console.log(message, data);
-        }
-
-        // ========== 初始化调试 ==========
-        debugLog('页面加载完成');
-        debugLog('当前URL:', window.location.href);
-        debugLog('当前路径:', window.location.pathname);
-        debugLog('当前origin:', window.location.origin);
-
-        // ========== 获取重定向URL ==========
-        function getRedirectUrl() {
-            const urlParams = new URLSearchParams(window.location.search);
-            let redirect = urlParams.get('redirect');
+        // ========== 状态管理器 ==========
+        const AuthState = {
+            // 检查是否是登出后的重定向
+            isLogoutRedirect() {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get('logout') === 'true';
+            },
             
-            debugLog('原始redirect参数:', redirect);
+            // 清理所有认证状态
+            clearAll() {
+                localStorage.removeItem('docs_auth_token');
+                localStorage.removeItem('docs_auth_time');
+                sessionStorage.removeItem('docs_auth_token');
+                sessionStorage.removeItem('docs_auth_time');
+                localStorage.removeItem('docs_logout_flag');
+            },
             
-            if (!redirect) {
-                // 如果没有指定重定向，默认到文档首页
-                redirect = GITHUB_CONFIG.basePath + 'index.html';
-                debugLog('使用默认重定向:', redirect);
-                return redirect;
+            // 设置登出标志
+            setLogoutFlag() {
+                localStorage.setItem('docs_logout_flag', 'true');
+                // 3秒后自动清理
+                setTimeout(() => {
+                    localStorage.removeItem('docs_logout_flag');
+                }, 3000);
+            },
+            
+            // 检查登出标志
+            checkLogoutFlag() {
+                return localStorage.getItem('docs_logout_flag') === 'true';
             }
+        };
+
+        // ========== 令牌管理器 ==========
+        const TokenManager = {
+            generate(password) {
+                const now = Date.now();
+                const tokenData = {
+                    p: btoa(password), // 加密存储密码
+                    t: now,
+                    e: now + (CONFIG.TOKEN_EXPIRE_HOURS * 60 * 60 * 1000),
+                    v: '2.0'
+                };
+                
+                const tokenString = JSON.stringify(tokenData);
+                return btoa(unescape(encodeURIComponent(tokenString)));
+            },
             
-            // 清理重定向URL
-            try {
-                // 确保重定向URL是相对路径且以正确的基础路径开头
-                if (redirect.startsWith('http')) {
-                    // 如果是完整URL，提取路径部分
-                    const urlObj = new URL(redirect);
-                    redirect = urlObj.pathname + urlObj.search;
+            validate(token) {
+                try {
+                    const jsonString = decodeURIComponent(escape(atob(token)));
+                    const tokenData = JSON.parse(jsonString);
+                    
+                    // 检查版本
+                    if (tokenData.v !== '2.0') return false;
+                    
+                    // 检查是否过期
+                    const now = Date.now();
+                    if (now > tokenData.e) return false;
+                    
+                    // 验证密码（需要解密）
+                    const storedPassword = atob(tokenData.p);
+                    return storedPassword === CONFIG.CORRECT_PASSWORD;
+                } catch (error) {
+                    console.warn('令牌验证失败:', error);
+                    return false;
+                }
+            },
+            
+            // 检查是否已有有效令牌
+            hasValidToken() {
+                // 优先检查sessionStorage
+                let token = sessionStorage.getItem('docs_auth_token');
+                if (token && this.validate(token)) return token;
+                
+                // 然后检查localStorage
+                token = localStorage.getItem('docs_auth_token');
+                if (token && this.validate(token)) return token;
+                
+                return null;
+            }
+        };
+
+        // ========== 重定向管理器 ==========
+        const RedirectManager = {
+            // 获取重定向目标
+            getTarget() {
+                const urlParams = new URLSearchParams(window.location.search);
+                let target = urlParams.get('redirect');
+                
+                // 如果没有指定，使用默认页面
+                if (!target) {
+                    return CONFIG.BASE_PATH + 'index.html';
                 }
                 
-                // 确保以基础路径开头
-                if (!redirect.startsWith(GITHUB_CONFIG.basePath)) {
-                    debugLog('警告: 重定向路径不以基础路径开头', redirect);
-                    redirect = GITHUB_CONFIG.basePath + redirect.replace(/^\//, '');
+                // 清理和验证目标URL
+                try {
+                    // 如果是完整URL，提取路径
+                    if (target.startsWith('http')) {
+                        const urlObj = new URL(target);
+                        target = urlObj.pathname + urlObj.search;
+                    }
+                    
+                    // 确保以基础路径开头
+                    if (!target.startsWith(CONFIG.BASE_PATH)) {
+                        target = CONFIG.BASE_PATH + target.replace(/^\//, '');
+                    }
+                    
+                    return target;
+                } catch (error) {
+                    console.warn('重定向目标无效:', error);
+                    return CONFIG.BASE_PATH + 'index.html';
                 }
-                
-                debugLog('处理后的重定向路径:', redirect);
-                return redirect;
-            } catch (error) {
-                debugLog('重定向URL解析错误:', error.message);
-                return GITHUB_CONFIG.basePath + 'index.html';
-            }
-        }
-
-        // ========== 生成令牌 ==========
-        function generateToken() {
-            const tokenData = {
-                t: Date.now(), // 时间戳
-                e: Date.now() + (2 * 60 * 60 * 1000), // 2小时后过期
-                r: Math.random().toString(36).substr(2) // 随机数
-            };
-            
-            // 简单的Base64编码
-            const tokenString = JSON.stringify(tokenData);
-            const token = btoa(unescape(encodeURIComponent(tokenString)));
-            
-            debugLog('生成的令牌:', token.substring(0, 20) + '...');
-            return token;
-        }
-
-        // ========== 执行重定向 ==========
-        function redirectToProtectedPage(token) {
-            const redirectUrl = getRedirectUrl();
-            debugLog('最终重定向目标:', redirectUrl);
-            
-            // 构建完整的URL（处理相对路径）
-            let fullUrl;
-            if (redirectUrl.startsWith('/')) {
-                // 绝对路径
-                fullUrl = window.location.origin + redirectUrl;
-            } else {
-                // 相对路径
-                const currentPath = window.location.pathname;
-                const basePath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
-                fullUrl = window.location.origin + basePath + redirectUrl;
-            }
-            
-            // 添加令牌参数
-            const separator = fullUrl.includes('?') ? '&' : '?';
-            const finalUrl = fullUrl + separator + 'auth_token=' + encodeURIComponent(token);
-            
-            debugLog('最终访问URL:', finalUrl);
-            
-            // 存储令牌到sessionStorage（用于页面内验证）
-            sessionStorage.setItem('auth_token', token);
-            sessionStorage.setItem('auth_time', Date.now().toString());
+            },
             
             // 执行重定向
-            window.location.href = finalUrl;
-        }
+            redirect(token, remember = false) {
+                const target = this.getTarget();
+                const separator = target.includes('?') ? '&' : '?';
+                const finalUrl = target + separator + 'auth=' + encodeURIComponent(token);
+                
+                // 存储令牌
+                if (remember) {
+                    localStorage.setItem('docs_auth_token', token);
+                    localStorage.setItem('docs_auth_time', Date.now().toString());
+                }
+                sessionStorage.setItem('docs_auth_token', token);
+                sessionStorage.setItem('docs_auth_time', Date.now().toString());
+                
+                // 清理登出标志
+                localStorage.removeItem('docs_logout_flag');
+                
+                console.log('正在重定向到:', finalUrl);
+                window.location.href = finalUrl;
+            }
+        };
+
+        // ========== 页面初始化 ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            const errorDiv = document.getElementById('error');
+            const logoutNotice = document.getElementById('logoutNotice');
+            
+            // 检查是否是登出后的访问
+            if (AuthState.isLogoutRedirect() || AuthState.checkLogoutFlag()) {
+                logoutNotice.style.display = 'block';
+                AuthState.clearAll();
+                
+                // 清理URL参数
+                const cleanUrl = window.location.origin + window.location.pathname;
+                window.history.replaceState({}, document.title, cleanUrl);
+            }
+            
+            // 检查是否已经有有效令牌
+            const validToken = TokenManager.hasValidToken();
+            if (validToken && !AuthState.checkLogoutFlag()) {
+                console.log('检测到有效令牌，自动重定向');
+                RedirectManager.redirect(validToken, false);
+                return;
+            }
+            
+            // 清除可能存在的无效令牌
+            AuthState.clearAll();
+        });
 
         // ========== 事件处理 ==========
         document.getElementById('submitBtn').addEventListener('click', function() {
             const password = document.getElementById('password').value;
             const errorDiv = document.getElementById('error');
+            const button = this;
             
             errorDiv.textContent = '';
             
@@ -196,18 +300,30 @@
                 return;
             }
             
-            if (password === CORRECT_PASSWORD) {
-                debugLog('密码验证成功');
+            // 验证密码
+            if (password === CONFIG.CORRECT_PASSWORD) {
+                // 禁用按钮防止重复提交
+                button.disabled = true;
+                button.textContent = '验证中...';
                 
                 // 生成令牌
-                const token = generateToken();
+                const token = TokenManager.generate(password);
                 
-                // 执行重定向
-                redirectToProtectedPage(token);
+                // 短暂延迟后重定向
+                setTimeout(() => {
+                    RedirectManager.redirect(token, true);
+                }, 500);
             } else {
                 errorDiv.textContent = '访问密钥不正确，请重试';
                 document.getElementById('password').focus();
                 document.getElementById('password').select();
+                
+                // 添加抖动效果
+                const input = document.getElementById('password');
+                input.style.animation = 'none';
+                setTimeout(() => {
+                    input.style.animation = 'shake 0.5s';
+                }, 10);
             }
         });
 
@@ -218,30 +334,21 @@
             }
         });
 
-        // ========== 自动检测已登录状态 ==========
-        window.addEventListener('load', function() {
-            const token = sessionStorage.getItem('auth_token');
-            if (token) {
-                try {
-                    const tokenString = decodeURIComponent(escape(atob(token)));
-                    const tokenData = JSON.parse(tokenString);
-                    
-                    const now = Date.now();
-                    if (now < tokenData.e) {
-                        // 令牌未过期，直接重定向
-                        debugLog('检测到有效令牌，自动重定向');
-                        redirectToProtectedPage(token);
-                    } else {
-                        // 令牌已过期，清除
-                        debugLog('令牌已过期，清除');
-                        sessionStorage.removeItem('auth_token');
-                        sessionStorage.removeItem('auth_time');
-                    }
-                } catch (error) {
-                    debugLog('令牌解析失败:', error.message);
-                }
+        // 添加CSS动画
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                20%, 40%, 60%, 80% { transform: translateX(5px); }
             }
-        });
+            
+            .submit-btn:disabled {
+                opacity: 0.7;
+                cursor: not-allowed;
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>
