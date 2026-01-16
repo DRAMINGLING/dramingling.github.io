@@ -1,137 +1,50 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>访问密钥认证</title>
+  <meta charset="UTF-8">
+  <title>访问认证</title>
   <style>
-    :root { color-scheme: light dark; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-           margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f6f7f9; }
-    .card { width: min(520px, 92vw); background: #fff; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.08);
-            padding: 28px; }
-    h1 { margin: 0 0 8px; font-size: 1.4rem; }
-    p { margin: 0 0 18px; color: #555; }
-    label { display: block; font-weight: 600; margin-bottom: 8px; }
-    input[type="password"] { width: 100%; padding: 12px 14px; border: 1px solid #d0d4db; border-radius: 10px; font-size: 1rem; }
-    .row { display: flex; gap: 12px; margin-top: 18px; align-items: center; }
-    button { padding: 10px 16px; border: 0; border-radius: 10px; background: #1f6feb; color: #fff; font-weight: 600; cursor: pointer; }
-    button:disabled { opacity: .6; cursor: not-allowed; }
-    .msg { margin-top: 12px; font-size: .95rem; }
-    .hint { font-size: .9rem; color: #777; margin-top: 8px; }
-    .small { font-size: .85rem; color: #777; margin-top: 18px; }
-    .danger { color: #c62828; }
-    .success { color: #1b5e20; }
-    @media (prefers-color-scheme: dark) {
-      body { background: #0d1117; }
-      .card { background: #161b22; box-shadow: none; border: 1px solid #30363d; }
-      p, .hint, .small, label { color: #c9d1d9; }
-      input[type="password"] { background: #0d1117; color: #c9d1d9; border-color: #30363d; }
-    }
+    body { font-family: sans-serif; display:flex; justify-content:center; align-items:center; height:100vh; background:#f0f0f0; }
+    .box { background:#fff; padding:20px; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,.1); }
+    input { padding:8px; width:200px; }
+    button { padding:8px 12px; margin-left:8px; }
+    .msg { margin-top:10px; color:red; }
   </style>
 </head>
 <body>
-  <main class="card">
-    <h1>访问密钥认证</h1>
-    <p>请输入访问密钥以继续浏览受保护页面。</p>
+  <div class="box">
+    <h2>请输入访问密钥</h2>
+    <input type="password" id="key" placeholder="密钥">
+    <button id="submit">确认</button>
+    <div id="msg" class="msg"></div>
+  </div>
 
-    <label for="key">访问密钥</label>
-    <input id="key" type="password" autocomplete="current-password" placeholder="请输入密钥" />
+<script>
+  const SECRET = "13574271985"; // 修改为你自己的密钥
+  const TOKEN_KEY = "pd_access_token";
 
-    <div class="row">
-      <button id="submit">验证并继续</button>
-      <button id="cancel" type="button">返回上一页</button>
-    </div>
+  const params = new URLSearchParams(location.search);
+  const redirectUrl = params.get("redirect");
 
-    <div id="msg" class="msg" aria-live="polite"></div>
-    <div class="hint">提示：通过后会自动跳转回你原本要访问的页面。</div>
-    <div class="small">安全说明：此为前端校验，适合低敏内容。高敏数据请使用支持服务端认证的托管。</div>
-  </main>
-
-  <script>
-    // ===== 可配置区域 =====
-    // 1) 设置你的密钥（建议改为哈希比较，示例为明文）
-    const PLAIN_SECRET = "13574271985"; // TODO: 修改为你的密钥
-
-    // 2) 允许的受保护路径前缀（与受保护目录一致）
-    const PROTECTED_PREFIX = "/personal_documents/";
-
-    // 3) sessionStorage 中的标记键名
-    const TOKEN_KEY = "pd_access_token";
-
-    // 4) token 生成（简单示例：固定值；可改为基于密钥的派生）
-    const makeToken = (secret) => `ok:${secret}`;
-
-    // ===== 工具函数 =====
-    const qs = new URLSearchParams(location.search);
-    const redirectUrl = qs.get("redirect"); // 原目标页
-    const msgEl = document.getElementById("msg");
-    const keyEl = document.getElementById("key");
-    const submitBtn = document.getElementById("submit");
-    const cancelBtn = document.getElementById("cancel");
-
-    function showMsg(text, type = "info") {
-      msgEl.textContent = text;
-      msgEl.className = `msg ${type === "error" ? "danger" : type === "success" ? "success" : ""}`;
-    }
-
-    function isProtected(url) {
-      try {
-        const u = new URL(url, location.origin);
-        return u.pathname.startsWith(PROTECTED_PREFIX);
-      } catch {
-        return false;
-      }
-    }
-
-    function safeRedirect(url) {
-      // 仅允许跳回本站受保护路径，避免开放重定向
-      if (url && isProtected(url)) {
-        location.href = url;
+  document.getElementById("submit").onclick = function() {
+    const input = document.getElementById("key").value.trim();
+    if (input === SECRET) {
+      sessionStorage.setItem(TOKEN_KEY, "ok");
+      // 跳转回原页面
+      if (redirectUrl) {
+        location.href = redirectUrl;
       } else {
-        // 若无目标或不合法，回到受保护目录首页（可自定义）
-        location.href = PROTECTED_PREFIX;
+        location.href = "/personal_documents/";
       }
+    } else {
+      document.getElementById("msg").textContent = "密钥错误，请重试";
     }
+  };
 
-    // 若已通过认证且带有 redirect，则直接跳回
-    (function autoPass() {
-      const token = sessionStorage.getItem(TOKEN_KEY);
-      if (token && redirectUrl) {
-        safeRedirect(redirectUrl);
-      }
-    })();
-
-    submitBtn.addEventListener("click", () => {
-      const input = keyEl.value.trim();
-      if (!input) {
-        showMsg("请输入密钥。", "error");
-        return;
-      }
-      submitBtn.disabled = true;
-
-      // 简单校验：明文比较（可替换为哈希比较）
-      if (input === PLAIN_SECRET) {
-        const token = makeToken(input);
-        sessionStorage.setItem(TOKEN_KEY, token);
-        showMsg("验证通过，正在跳转…", "success");
-        setTimeout(() => {
-          safeRedirect(redirectUrl || PROTECTED_PREFIX);
-        }, 300);
-      } else {
-        showMsg("密钥错误，请重试。", "error");
-        submitBtn.disabled = false;
-      }
-    });
-
-    cancelBtn.addEventListener("click", () => {
-      history.length > 1 ? history.back() : (location.href = "/");
-    });
-
-    // 回车提交
-    keyEl.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") submitBtn.click();
-    });
-  </script>
+  // 如果已经有 token 且有 redirect 参数，直接跳回
+  if (sessionStorage.getItem(TOKEN_KEY) === "ok" && redirectUrl) {
+    location.href = redirectUrl;
+  }
+</script>
 </body>
 </html>
