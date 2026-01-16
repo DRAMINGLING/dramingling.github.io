@@ -7,216 +7,27 @@
     
     <!-- 验证脚本 - 必须放在最前面 -->
     <script>
-    (function() {
-        console.log('🔐 页面访问验证开始');
-        
-        // ========== 配置 ==========
-        const CONFIG = {
-            AUTH_PAGE: '../auth.html',
-            BASE_PATH: '/personal_documents/',
-            CORRECT_PASSWORD: '2024PersonalDocs'
-        };
-        
-        // ========== 调试函数 ==========
-        function debugLog(message, data) {
-            console.log(`[Auth] ${message}`, data || '');
-        }
-        
-        // ========== 令牌验证函数 ==========
-        function validateToken(token) {
-            if (!token) {
-                debugLog('令牌为空');
-                return false;
-            }
-            
-            try {
-                const tokenString = decodeURIComponent(escape(atob(token)));
-                const tokenData = JSON.parse(tokenString);
-                
-                debugLog('令牌数据:', {
-                    password: tokenData.p ? '***' : '无',
-                    timestamp: new Date(tokenData.t).toLocaleString(),
-                    expires: new Date(tokenData.e).toLocaleString()
-                });
-                
-                // 检查基本结构
-                if (!tokenData.p || !tokenData.t || !tokenData.e) {
-                    debugLog('令牌格式错误');
-                    return false;
-                }
-                
-                // 检查是否过期
-                const now = Date.now();
-                if (now > tokenData.e) {
-                    debugLog('令牌已过期');
-                    return false;
-                }
-                
-                // 验证密码
-                if (tokenData.p !== CONFIG.CORRECT_PASSWORD) {
-                    debugLog('密码不匹配');
-                    return false;
-                }
-                
-                debugLog('令牌验证成功');
-                return true;
-            } catch (error) {
-                debugLog('令牌解析失败:', error);
-                return false;
-            }
-        }
-        
-        // ========== 获取有效令牌 ==========
-        function getValidToken() {
-            // 1. 从URL参数获取
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlToken = urlParams.get('auth_token');
-            debugLog('URL令牌:', urlToken ? '存在' : '不存在');
-            
-            if (urlToken && validateToken(urlToken)) {
-                return urlToken;
-            }
-            
-            // 2. 从sessionStorage获取
-            const sessionToken = sessionStorage.getItem('docs_auth_token');
-            debugLog('sessionStorage令牌:', sessionToken ? '存在' : '不存在');
-            
-            if (sessionToken && validateToken(sessionToken)) {
-                return sessionToken;
-            }
-            
-            // 3. 从localStorage获取
-            const localToken = localStorage.getItem('docs_auth_token');
-            debugLog('localStorage令牌:', localToken ? '存在' : '不存在');
-            
-            if (localToken && validateToken(localToken)) {
-                return localToken;
-            }
-            
-            debugLog('未找到有效令牌');
-            return null;
-        }
-        
-        // ========== 存储令牌 ==========
-        function storeToken(token) {
-            if (!token) return;
-            
-            // 存储到sessionStorage
-            sessionStorage.setItem('docs_auth_token', token);
-            sessionStorage.setItem('docs_auth_time', Date.now().toString());
-            
-            // 存储到localStorage
-            localStorage.setItem('docs_auth_token', token);
-            localStorage.setItem('docs_auth_time', Date.now().toString());
-            
-            debugLog('令牌已存储');
-        }
-        
-        // ========== 清理URL参数 ==========
-        function cleanUrlToken() {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('auth_token')) {
-                urlParams.delete('auth_token');
-                const cleanUrl = window.location.pathname + 
-                    (urlParams.toString() ? '?' + urlParams.toString() : '');
-                
-                window.history.replaceState({}, document.title, cleanUrl);
-                debugLog('已清理URL中的令牌参数');
-            }
-        }
-        
-        // ========== 重定向到登录页 ==========
-        function redirectToLogin() {
-            debugLog('重定向到登录页');
-            
-            // 防止循环重定向
-            if (sessionStorage.getItem('redirecting') === 'true') {
-                debugLog('检测到循环重定向，停止');
-                return;
-            }
-            
-            sessionStorage.setItem('redirecting', 'true');
-            
-            // 构建登录URL，包含当前页面作为重定向目标
-            const currentPath = window.location.pathname;
-            const redirectParam = encodeURIComponent(currentPath);
-            const authUrl = `${CONFIG.AUTH_PAGE}?redirect=${redirectParam}`;
-            
-            debugLog('登录URL:', authUrl);
-            
-            // 清除重定向标志
-            setTimeout(() => {
-                sessionStorage.removeItem('redirecting');
-                window.location.href = authUrl;
-            }, 100);
-        }
-        
-        // ========== 主验证逻辑 ==========
-        function mainAuthCheck() {
-            debugLog('执行验证检查');
-            
-            // 获取有效令牌
-            const validToken = getValidToken();
-            
-            if (!validToken) {
-                debugLog('验证失败，需要登录');
-                redirectToLogin();
-                return false;
-            }
-            
-            debugLog('验证成功');
-            
-            // 存储令牌
-            storeToken(validToken);
-            
-            // 清理URL中的令牌参数
-            cleanUrlToken();
-            
-            return true;
-        }
-        
-        // ========== 退出登录函数 ==========
-        window.logout = function() {
-            debugLog('执行退出登录');
-            
-            // 清除所有存储的令牌
-            sessionStorage.clear();
-            localStorage.removeItem('docs_auth_token');
-            localStorage.removeItem('docs_auth_time');
-            
-            // 重定向到登录页
-            const authUrl = CONFIG.AUTH_PAGE + '?logout=true';
-            window.location.href = authUrl;
-        };
-        
-        // ========== 页面加载验证 ==========
-        document.addEventListener('DOMContentLoaded', function() {
-            debugLog('页面加载完成，开始验证');
-            
-            // 执行验证
-            const isAuthenticated = mainAuthCheck();
-            
-            if (!isAuthenticated) {
-                debugLog('验证失败，隐藏页面内容');
-                // 如果验证失败，页面会被重定向，这里不需要做其他操作
-            } else {
-                debugLog('验证成功，显示页面内容');
-                // 页面正常显示
-                
-                // 定时检查令牌（每10分钟）
-                setInterval(() => {
-                    if (!getValidToken()) {
-                        debugLog('定时检查：令牌失效');
-                        mainAuthCheck();
-                    }
-                }, 10 * 60 * 1000);
-            }
-        });
-        
-        // 暴露验证函数
-        window.checkAuth = mainAuthCheck;
-    })();
+  (function () {
+    const TOKEN_KEY = "pd_access_token";
+    const PROTECTED_PREFIX = "/personal_documents/";
+    const AUTH_PAGE = "/auth.html";
+
+    function hasToken() {
+      const t = sessionStorage.getItem(TOKEN_KEY);
+      return typeof t === "string" && t.startsWith("ok:");
+    }
+
+    function isProtectedPath() {
+      return location.pathname.startsWith(PROTECTED_PREFIX);
+    }
+
+    if (isProtectedPath() && !hasToken()) {
+      const params = new URLSearchParams({ redirect: location.href });
+      location.href = `${AUTH_PAGE}?${params.toString()}`;
+    }
+  })();
     </script>
+
     
     <style>
         /* 基础样式 */
