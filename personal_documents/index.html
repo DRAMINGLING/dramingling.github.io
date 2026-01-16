@@ -6,26 +6,16 @@
     <title>个人文档库 - 受保护空间</title>
     
     <!-- 验证脚本 - 必须放在最前面 -->
-    <script>
-  (function () {
-    const TOKEN_KEY = "pd_access_token";
-    const PROTECTED_PREFIX = "/personal_documents/";
-    const AUTH_PAGE = "/auth.html";
-
-    function hasToken() {
-      const t = sessionStorage.getItem(TOKEN_KEY);
-      return typeof t === "string" && t.startsWith("ok:");
-    }
-
-    function isProtectedPath() {
-      return location.pathname.startsWith(PROTECTED_PREFIX);
-    }
-
-    if (isProtectedPath() && !hasToken()) {
-      const params = new URLSearchParams({ redirect: location.href });
-      location.href = `${AUTH_PAGE}?${params.toString()}`;
-    }
-  })();
+    <script> 
+        (function()
+         { const TOKEN_KEY = "pd_access_token"; 
+          const AUTH_PAGE = "/auth.html"; 
+          if (sessionStorage.getItem(TOKEN_KEY) !== "ok") 
+          { const params = new URLSearchParams({ redirect: location.href }); 
+           location.href = AUTH_PAGE + "?" + params.toString(); 
+          } 
+         }
+        )(); 
     </script>
 
     
