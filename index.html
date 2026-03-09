@@ -262,49 +262,5 @@
         <span>Any issue is welcome!</span>
         <a href="https://github.com/DRAMINGLING" target="_blank">My github homepage</a>
     </div>
-    
-    <script>
-        // 为所有PDF链接添加交互效果
-        document.querySelectorAll('.pdf-link').forEach(link => {
-            link.addEventListener('click', function(e) {
-                console.log('正在打开PDF文件...');
-                
-                // 可选：添加加载指示器
-                const originalText = this.innerHTML;
-                this.innerHTML = '<span class="pdf-icon">⏳</span> 正在加载...';
-                this.style.backgroundColor = '#888';
-                
-                // 3秒后恢复按钮文本（如果页面没有跳转的话）
-                setTimeout(() => {
-                    this.innerHTML = originalText;
-                    this.style.backgroundColor = '#4a6fa5';
-                }, 3000);
-            });
-        });
-        
-        // 页面加载完成后的简单动画
-        document.addEventListener('DOMContentLoaded', function() {
-            const container = document.querySelector('.container');
-            container.style.opacity = '0';
-            container.style.transform = 'translateY(20px)';
-            
-            setTimeout(() => {
-                container.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
-                container.style.opacity = '1';
-                container.style.transform = 'translateY(0)';
-            }, 100);
-            
-            // 右下角元素也添加淡入动画
-            const footerNote = document.querySelector('.footer-note');
-            footerNote.style.opacity = '0';
-            footerNote.style.transform = 'translateX(20px)';
-            
-            setTimeout(() => {
-                footerNote.style.transition = 'opacity 0.8s ease 0.3s, transform 0.8s ease 0.3s';
-                footerNote.style.opacity = '1';
-                footerNote.style.transform = 'translateX(0)';
-            }, 100);
-        });
-    </script>
 </body>
 </html>
