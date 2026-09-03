@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title> paper_drafts </title>
+  <script>
+    (function(){
+      const TOKEN_KEY = "pd_access_token";
+      const AUTH_PAGE = "/auth.html";
+
+      // 检查是否已认证
+      if (sessionStorage.getItem(TOKEN_KEY) !== "ok") {
+        const params = new URLSearchParams({ redirect: location.href });
+        location.href = AUTH_PAGE + "?" + params.toString();
+      }
+
+      // 提供退出函数
+      window.logout = function() {
+        sessionStorage.removeItem(TOKEN_KEY);
+        const params = new URLSearchParams({ redirect: location.href });
+        location.href = AUTH_PAGE + "?" + params.toString();
+      };
+    })();
+  </script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      margin: 0;
+      background: #f4f6f9;
+      color: #333;
+    }
+    header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    header p {
+      margin: 4px 0 0;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    .logout-btn {
+      background: #e74c3c;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+    .file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .file-row {
+      background: white;
+      border-radius: 8px;
+      padding: 15px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .file-info {
+      flex: 1;
+    }
+    .file-info h3 {
+      margin: 0;
+      font-size: 18px;
+      color: #444;
+    }
+    .file-info p {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: #666;
+    }
+    .file-row a {
+      padding: 8px 12px;
+      background: #667eea;
+      color: white;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 14px;
+      margin-left: 20px;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>📂 我的个人文档库</h1>
+      <p>已通过身份验证，可访问以下文件</p>
+    </div>
+    <button class="logout-btn" onclick="logout()">退出登录</button>
+  </header>
+
+  <div class="container">
+    <div class="file-list">
+      <!-- 文件行示例 -->
+      <div class="file-row">
+        <div class="file-info">
+          <h3>Some Useful Results.pdf</h3>
+        </div>
+        <a href="https://dramingling.github.io/Personal_Documents/Semi-abelian_Reduction.pdf" target="_blank">查看</a>
+      </div>
+      
+      <div class="file-row">
+        <div class="file-info">
+          <h3>Some Useful Results.pdf</h3>
+        </div>
+        <a href="https://dramingling.github.io/Personal_Documents/Some Useful Results.pdf" target="_blank">查看</a>
+      </div>
+      
+      <div class="file-row">
+        <div class="file-info">
+          <h3>Some Useful Examples.pdf</h3>
+        </div>
+        <a href="https://dramingling.github.io/Personal_Documents/Some Useful Examples.pdf" target="_blank">查看</a>
+      </div>
+
+      <div class="file-row">
+        <div class="file-info">
+          <h3>Remark.pdf</h3>
+        </div>
+        <a href="https://dramingling.github.io/Personal_Documents/Remark.pdf" target="_blank">查看</a>
+      </div>
+
+      <div class="file-row">
+        <div class="file-info">
+          <h3>Chow Varieties.pdf</h3>
+        </div>
+        <a href="https://dramingling.github.io/Personal_Documents/Chow Varieties.pdf" target="_blank">查看</a>
+      </div>
+
+      <div class="file-row">
+        <div class="file-info">
+          <h3>B站会员购监控</h3>
+        </div>
+        <a href="https://dramingling.github.io/personal_documents/Bilibili_Goods_Price_Monitor" target="_blank">查看</a>
+      </div>
+      
+      <div class="file-row">
+        <div class="file-info">
+          <h3>旅行计划.xlsx</h3>
+          <p>2025年旅行计划表</p>
+        </div>
+        <a href="travel_plan.xlsx" target="_blank">查看</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
