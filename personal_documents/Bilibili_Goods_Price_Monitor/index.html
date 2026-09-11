@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Bilibili 会员购商品价格历史">
+  <title>Bilibili 商品价格历史</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --primary:#00a1d6;
+      --ink:#172033;
+      --muted:#667085;
+      --line:#e5e9f0;
+      --surface:#fff;
+      --bg:#f4f7fb;
+    }
+
+    * { box-sizing:border-box; }
+
+    body {
+      margin:0;
+      color:var(--ink);
+      background:var(--bg);
+      font:15px/1.55 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+    }
+
+    main {
+      width:min(1120px,calc(100% - 28px));
+      min-width:0;
+      margin:36px auto;
+    }
+
+    header { margin-bottom:22px; }
+    h1 { margin:0 0 4px; font-size:clamp(1.6rem,4vw,2.25rem); }
+    .subtitle,.muted { color:var(--muted); }
+
+    .panel {
+      min-width:0;
+      padding:clamp(18px,3vw,28px);
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:var(--surface);
+      box-shadow:0 12px 35px rgb(20 40 80 / 7%);
+    }
+
+    .controls {
+      display:grid;
+      grid-template-columns:minmax(220px,2fr) repeat(2,minmax(150px,1fr));
+      gap:16px;
+    }
+
+    label { display:grid; min-width:0; gap:6px; font-weight:650; }
+
+    select {
+      width:100%;
+      min-width:0;
+      padding:10px 12px;
+      border:1px solid #cfd6e2;
+      border-radius:10px;
+      background:#fff;
+      color:var(--ink);
+      font:inherit;
+    }
+
+    .identity {
+      display:flex;
+      flex-wrap:wrap;
+      align-items:baseline;
+      gap:8px 18px;
+      margin:22px 0 12px;
+      overflow-wrap:anywhere;
+    }
+
+    .identity h2 { margin:0; font-size:1.25rem; }
+
+    .stats {
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:12px;
+      margin:14px 0 20px;
+    }
+
+    .stat { padding:12px 14px; border-radius:12px; background:#f7f9fc; }
+    .stat span { display:block; color:var(--muted); font-size:.82rem; }
+    .stat strong { font-size:1.15rem; }
+
+    .chart-wrap {
+      position:relative;
+      width:100%;
+      min-width:0;
+      height:min(52vh,480px);
+      min-height:300px;
+    }
+
+    .chart-scroll {
+      width:100%;
+      height:100%;
+      min-width:0;
+      overflow-x:auto;
+      overflow-y:hidden;
+      direction:ltr;
+      -webkit-overflow-scrolling:touch;
+    }
+
+    .chart-scroll:focus-visible {
+      outline:2px solid var(--primary);
+      outline-offset:3px;
+    }
+
+    /* 只有这个普通 div 扩展时间轴，绝不把 canvas 扩展到整段历史的宽度。 */
+    .chart-stage {
+      position:relative;
+      min-width:100%;
+      height:100%;
+    }
+
+    /* sticky 让画布留在可视区域；滚动时由 JavaScript 更新可见数据。 */
+    .chart-viewport {
+      position:sticky;
+      left:0;
+      width:100%;
+      height:100%;
+      overflow:hidden;
+    }
+
+    /* Chart.js 使用独立、尺寸确定的父容器。 */
+    .chart-canvas-container {
+      position:relative;
+      width:100%;
+      height:100%;
+      min-width:0;
+      overflow:hidden;
+    }
+
+    .chart-canvas-container canvas { display:block; }
+    .chart-hint { margin:10px 0 0; font-size:.875rem; }
+
+    .message {
+      margin:18px 0 0;
+      padding:12px 14px;
+      border-radius:10px;
+      background:#fff7e8;
+      color:#8a5700;
+    }
+
+    .message.error { background:#fff0f0; color:#a12626; }
+    [hidden] { display:none !important; }
+
+    @media (max-width:700px) {
+      main { margin:18px auto; }
+      .controls { grid-template-columns:1fr; }
+      .stats { grid-template-columns:1fr; }
+      .chart-wrap { height:360px; }
+      .panel { border-radius:14px; }
+    }
+  </style>
+</head>
+
+<body>
+<main>
+  <header>
+    <h1>Bilibili 商品价格历史</h1>
+    <div class="subtitle">所有时间与统计区间均为 Asia/Shanghai（UTC+8）</div>
+  </header>
+
+  <section class="panel" aria-busy="true" id="dashboard">
+    <div class="controls">
+      <label>
+        商品
+        <select id="product-select" disabled></select>
+      </label>
+      <label>
+        时间单位
+        <select id="granularity-select">
+          <option value="hourly">每小时</option>
+          <option value="daily">每天</option>
+        </select>
+      </label>
+      <label>
+        价格指标
+        <select id="metric-select">
+          <option value="max">最高价</option>
+          <option value="min">最低价</option>
+          <option value="average" selected>平均价</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="identity">
+      <h2 id="product-name">正在加载…</h2>
+      <span class="muted" id="product-id"></span>
+    </div>
+    <div class="muted">数据更新时间：<time id="updated-at">—</time></div>
+
+    <div class="stats" id="stats" hidden>
+      <div class="stat"><span>图表最高价</span><strong id="maximum">—</strong></div>
+      <div class="stat"><span>图表最低价</span><strong id="minimum">—</strong></div>
+      <div class="stat"><span>图表平均价</span><strong id="average">—</strong></div>
+    </div>
+
+    <div class="chart-wrap" id="chart-wrap">
+      <div class="chart-scroll" id="chart-scroll" tabindex="0" role="region"
+           aria-label="商品价格历史，可左右滚动" aria-describedby="chart-hint">
+        <div class="chart-stage" id="chart-stage">
+          <div class="chart-viewport" id="chart-viewport">
+            <div class="chart-canvas-container">
+              <canvas id="price-chart" role="img" aria-label="商品价格历史折线图"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="muted chart-hint" id="chart-hint" hidden>左右滑动、拖动滚动条或使用鼠标滚轮查看历史，默认显示最新数据。也可聚焦图表后使用左右方向键。</p>
+    <p class="message" id="message" role="status">正在加载价格历史数据…</p>
+  </section>
+</main>
+
+<script>
+'use strict';
+
+const CONFIG = Object.freeze({
+  dataUrl: './data/price_history.json',
+  timeZone: 'Asia/Shanghai',
+  // 普通滚动占位元素也设置上限，避免极长历史突破浏览器的布局尺寸限制。
+  maxScrollWidth: 1000000
+});
+
+const METRIC_LABELS = Object.freeze({max: '最高价', min: '最低价', average: '平均价'});
+
+const elements = {
+  dashboard: document.querySelector('#dashboard'),
+  product: document.querySelector('#product-select'),
+  granularity: document.querySelector('#granularity-select'),
+  metric: document.querySelector('#metric-select'),
+  productName: document.querySelector('#product-name'),
+  productId: document.querySelector('#product-id'),
+  updatedAt: document.querySelector('#updated-at'),
+  stats: document.querySelector('#stats'),
+  maximum: document.querySelector('#maximum'),
+  minimum: document.querySelector('#minimum'),
+  average: document.querySelector('#average'),
+  message: document.querySelector('#message'),
+  chartWrap: document.querySelector('#chart-wrap'),
+  chartScroll: document.querySelector('#chart-scroll'),
+  chartStage: document.querySelector('#chart-stage'),
+  chartViewport: document.querySelector('#chart-viewport'),
+  chartHint: document.querySelector('#chart-hint'),
+  canvas: document.querySelector('#price-chart')
+};
+
+let products = new Map();
+let priceChart = null;
+let dataUpdatedAt = null;
+let chartView = null;
+let scrollFrame = null;
+let resizeFrame = null;
+
+// 复用 formatter，长历史不必为每条记录创建新的 Intl 实例。
+const shanghaiFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: CONFIG.timeZone,
+  year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit',
+  hourCycle: 'h23'
+});
+
+/** 读取现有的原始记录数组，不改变 price_history.json 的格式。 */
+async function loadPriceHistory() {
+  const response = await fetch(`${CONFIG.dataUrl}?t=${Date.now()}`, {cache: 'no-store'});
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const payload = await response.json();
+  if (!Array.isArray(payload)) {
+    throw new TypeError('价格历史 JSON 格式错误：顶层应为记录数组');
+  }
+  return payload;
+}
+
+function parseTimestamp(value) {
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+function isValidRecord(record) {
+  if (!record || typeof record !== 'object') return false;
+  const timestamp = parseTimestamp(record.timestamp);
+  const price = Number(record.price);
+  const productId = String(record.product_id || record.cluster_id || '').trim();
+  return timestamp !== null && Number.isFinite(price) && productId.length > 0;
+}
+
+function getShanghaiParts(timestamp) {
+  const parts = Object.fromEntries(
+    shanghaiFormatter.formatToParts(new Date(timestamp))
+      .filter(part => part.type !== 'literal')
+      .map(part => [part.type, part.value])
+  );
+  return {
+    year: Number(parts.year), month: Number(parts.month),
+    day: Number(parts.day), hour: Number(parts.hour)
+  };
+}
+
+function getBucketDescriptor(timestamp, granularity) {
+  const {year, month, day, hour} = getShanghaiParts(timestamp);
+  const date = [String(year).padStart(4, '0'), String(month).padStart(2, '0'),
+    String(day).padStart(2, '0')].join('-');
+  const hourText = String(hour).padStart(2, '0');
+  return granularity === 'hourly' ? {
+    key: `${date}-${hourText}`,
+    sortValue: Date.UTC(year, month - 1, day, hour),
+    label: `${date.slice(5)} ${hourText}:00`
+  } : {
+    key: date,
+    sortValue: Date.UTC(year, month - 1, day),
+    label: date
+  };
+}
+
+function roundToTwo(value) {
+  if (!Number.isFinite(value)) return value;
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function aggregateRecords(records, granularity) {
+  const buckets = new Map();
+  for (const record of records) {
+    const timestamp = parseTimestamp(record.timestamp);
+    const price = Number(record.price);
+    if (timestamp === null || !Number.isFinite(price)) continue;
+    const descriptor = getBucketDescriptor(timestamp, granularity);
+    if (!buckets.has(descriptor.key)) {
+      buckets.set(descriptor.key, {
+        ...descriptor, sum: 0, max: -Infinity, min: Infinity, sampleCount: 0
+      });
+    }
+    const bucket = buckets.get(descriptor.key);
+    bucket.sum += price;
+    bucket.max = Math.max(bucket.max, price);
+    bucket.min = Math.min(bucket.min, price);
+    bucket.sampleCount += 1;
+  }
+  return Array.from(buckets.values())
+    .sort((a, b) => a.sortValue - b.sortValue)
+    .map(bucket => ({
+      time: bucket.key, label: bucket.label, max: bucket.max, min: bucket.min,
+      average: roundToTwo(bucket.sum / bucket.sampleCount),
+      sampleCount: bucket.sampleCount
+    }));
+}
+
+/** 按商品分组，名称仍使用该商品最后一个非空 product_name。 */
+function normalizeProducts(records) {
+  const grouped = new Map();
+  const validRecords = records.filter(isValidRecord).map(record => ({
+    ...record,
+    product_id: String(record.product_id || record.cluster_id).trim(),
+    product_type: String(record.product_type || 'resell').trim() || 'resell',
+    product_name: String(record.product_name || '').trim(),
+    price: Number(record.price),
+    _timestamp: parseTimestamp(record.timestamp)
+  })).sort((a, b) => a._timestamp - b._timestamp);
+
+  for (const record of validRecords) {
+    const productId = record.product_id;
+    if (!grouped.has(productId)) {
+      grouped.set(productId, {
+        product_id: productId, product_type: record.product_type,
+        name: '', url: record.url || '', records: []
+      });
+    }
+    const product = grouped.get(productId);
+    product.records.push(record);
+    if (record.product_name) product.name = record.product_name;
+    if (record.product_type) product.product_type = record.product_type;
+    if (record.url) product.url = record.url;
+  }
+  for (const product of grouped.values()) {
+    product.hourly = aggregateRecords(product.records, 'hourly');
+    product.daily = aggregateRecords(product.records, 'daily');
+  }
+  return grouped;
+}
+
+function getLatestTimestamp(records) {
+  let latest = null;
+  for (const record of records) {
+    const timestamp = parseTimestamp(record?.timestamp);
+    if (timestamp !== null && (latest === null || timestamp > latest)) latest = timestamp;
+  }
+  return latest;
+}
+
+function renderProductSelector() {
+  const options = Array.from(products, ([key, product]) => {
+    const name = product.name || `商品 ${product.product_id}`;
+    return new Option(`${name} (${product.product_id})`, key);
+  });
+  elements.product.replaceChildren(...options);
+  elements.product.disabled = products.size === 0;
+}
+
+function validMetricValues(points, metric) {
+  return points.map(point => point[metric]).filter(Number.isFinite);
+}
+
+function formatPrice(value) {
+  return Number.isFinite(value) ? `${value.toFixed(2)} 元` : '—';
+}
+
+function formatUpdatedAt(timestamp) {
+  if (!Number.isFinite(timestamp)) return '无记录';
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: CONFIG.timeZone,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
+  }).format(new Date(timestamp));
+}
+
+// 不使用 Math.max(...values)，避免长数组触发参数数量限制。
+function summarizeValues(values) {
+  let min = Infinity;
+  let max = -Infinity;
+  let sum = 0;
+  for (const value of values) {
+    min = Math.min(min, value);
+    max = Math.max(max, value);
+    sum += value;
+  }
+  return {min, max, average: values.length ? roundToTwo(sum / values.length) : NaN};
+}
+
+function updateStatistics(values) {
+  elements.stats.hidden = values.length === 0;
+  if (!values.length) return;
+  const summary = summarizeValues(values);
+  elements.maximum.textContent = formatPrice(summary.max);
+  elements.minimum.textContent = formatPrice(summary.min);
+  elements.average.textContent = formatPrice(summary.average);
+}
+
+/** 根据屏幕宽度确定一次显示多少个点，数量与总历史长度无关。 */
+function getWindowSize(width, total, granularity) {
+  const spacing = granularity === 'hourly' ? 72 : 90;
+  const slots = Math.max(2, Math.floor(Math.max(0, width - 80) / spacing) + 1);
+  return Math.min(total, slots);
+}
+
+function getMaxStart() {
+  return chartView ? Math.max(0, chartView.points.length - chartView.count) : 0;
+}
+
+function getScrollExtent() {
+  return Math.max(0, elements.chartScroll.scrollWidth - elements.chartScroll.clientWidth);
+}
+
+/** 将当前时间段同步到原生滚动条；超长时间轴按比例映射。 */
+function scrollToStart(start) {
+  if (!chartView) return;
+  const maxStart = getMaxStart();
+  chartView.start = Math.max(0, Math.min(maxStart, start));
+  elements.chartScroll.scrollLeft = maxStart
+    ? chartView.start / maxStart * getScrollExtent() : 0;
+}
+
+function layoutViewport(anchorLatest = false) {
+  if (!chartView) return;
+  const width = Math.max(1, elements.chartScroll.clientWidth);
+  const wasAtEnd = chartView.start >= getMaxStart();
+  const oldStart = chartView.start;
+  chartView.count = getWindowSize(width, chartView.points.length, chartView.granularity);
+  const maxStart = getMaxStart();
+  const spacing = chartView.granularity === 'hourly' ? 72 : 90;
+  const scrollWidth = Math.min(CONFIG.maxScrollWidth, maxStart * spacing);
+
+  // 画布父容器只与可视宽度有关；宽时间轴只是普通 DOM 占位元素。
+  elements.chartViewport.style.width = `${width}px`;
+  elements.chartStage.style.width = `${width + scrollWidth}px`;
+  // 在设置宽度后读取 clientHeight，扣除横向滚动条实际占用的高度。
+  elements.chartStage.style.height = `${elements.chartScroll.clientHeight}px`;
+  scrollToStart(anchorLatest || wasAtEnd ? maxStart : oldStart);
+  elements.chartHint.hidden = maxStart === 0;
+}
+
+/** 只将可见时间段送入 Chart.js，完整历史始终保存在 chartView.points。 */
+function drawVisiblePoints(force = false) {
+  if (!priceChart || !chartView) return;
+  const {start, count, metric} = chartView;
+  if (!force && start === chartView.drawnStart && count === chartView.drawnCount) return;
+  const visible = chartView.points.slice(start, start + count);
+  chartView.visible = visible;
+  chartView.drawnStart = start;
+  chartView.drawnCount = count;
+  priceChart.data.labels = visible.map(point => point.label);
+  priceChart.data.datasets[0].data = visible.map(point =>
+    Number.isFinite(point[metric]) ? point[metric] : null
+  );
+  priceChart.setActiveElements([]);
+  if (priceChart.tooltip) priceChart.tooltip.setActiveElements([], {x: 0, y: 0});
+  priceChart.update('none');
+}
+
+function renderChart(product, points, metric, granularity) {
+  if (typeof Chart === 'undefined') {
+    throw new Error('图表组件未能加载，请检查网络连接后刷新页面。');
+  }
+  if (priceChart) {
+    priceChart.destroy();
+    priceChart = null;
+  }
+  chartView = {
+    points, metric, granularity, start: 0, count: 0, visible: [],
+    drawnStart: -1, drawnCount: -1
+  };
+  layoutViewport(true);
+
+  // 整段历史使用相同的 Y 轴范围，横向滚动时不会发生价格轴缩放。
+  const values = validMetricValues(points, metric);
+  const summary = summarizeValues(values);
+  const yBounds = values.length ? {
+    min: summary.min >= 0
+      ? Math.max(0, Math.floor(summary.min * 2) / 2 - 0.5)
+      : Math.floor(summary.min * 2) / 2 - 0.5,
+    max: Math.ceil(summary.max * 2) / 2 + 0.5
+  } : {};
+
+  priceChart = new Chart(elements.canvas, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: `${METRIC_LABELS[metric]}（元）`, data: [],
+        borderColor: '#00a1d6', backgroundColor: 'rgb(0 161 214 / 12%)',
+        pointRadius: 3, pointHoverRadius: 5,
+        tension: 0.2, spanGaps: false, fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+      interaction: {intersect: false, mode: 'index'},
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: granularity === 'hourly' ? '时间（UTC+8，每小时）' : '日期（UTC+8，每天）'
+          },
+          ticks: {
+            autoSkip: true,
+            maxRotation: 0,
+            minRotation: 0,
+            callback(value) {
+              const label = this.getLabelForValue(value);
+              return granularity === 'hourly' ? label.split(' ') : label;
+            }
+          }
+        },
+        y: {
+          ...yBounds,
+          title: {display: true, text: '价格（人民币 / 元）'},
+          ticks: {
+            stepSize: 0.5,
+            callback(value) { return Number(value).toFixed(1); }
+          }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label(context) {
+              if (!Number.isFinite(context.parsed.y)) return '该时间桶无样本';
+              const point = chartView.visible[context.dataIndex];
+              return [
+                `${METRIC_LABELS[metric]}：${formatPrice(context.parsed.y)}`,
+                `样本数：${point.sampleCount}`
+              ];
+            }
+          }
+        }
+      }
+    }
+  });
+  elements.canvas.setAttribute('aria-label', `${product.name || product.product_id}价格历史折线图`);
+  drawVisiblePoints(true);
+}
+
+function showMessage(text, isError = false) {
+  elements.message.textContent = text;
+  elements.message.classList.toggle('error', isError);
+  elements.message.hidden = false;
+}
+
+function updateChart() {
+  const product = products.get(elements.product.value);
+  if (!product) {
+    if (priceChart) priceChart.destroy();
+    priceChart = null;
+    chartView = null;
+    elements.chartStage.style.width = '100%';
+    elements.chartHint.hidden = true;
+    showMessage('暂无价格历史数据');
+    elements.stats.hidden = true;
+    return;
+  }
+  const granularity = elements.granularity.value;
+  const metric = elements.metric.value;
+  const points = product[granularity] || [];
+  elements.productName.textContent = product.name || `商品 ${product.product_id}`;
+  elements.productId.textContent = `商品 ID：${product.product_id}（${product.product_type || 'resell'}）`;
+  elements.updatedAt.textContent = formatUpdatedAt(dataUpdatedAt);
+  const values = validMetricValues(points, metric);
+  // 保留原统计口径：当前商品、时间单位和指标的完整历史，不随滚动变化。
+  updateStatistics(values);
+  renderChart(product, points, metric, granularity);
+  if (!values.length) showMessage('暂无价格历史数据');
+  else elements.message.hidden = true;
+}
+
+async function initializeDashboard() {
+  try {
+    const records = await loadPriceHistory();
+    products = normalizeProducts(records);
+    dataUpdatedAt = getLatestTimestamp(records);
+    renderProductSelector();
+    if (!products.size) {
+      elements.productName.textContent = '暂无商品';
+      elements.productId.textContent = '';
+      showMessage('价格历史文件中没有有效记录');
+      return;
+    }
+    updateChart();
+  } catch (error) {
+    console.error(error);
+    elements.productName.textContent = '数据加载失败';
+    elements.productId.textContent = '';
+    showMessage(
+      error instanceof TypeError || error.message?.startsWith('图表组件')
+        ? error.message : '无法加载价格历史数据，请稍后重试。',
+      true
+    );
+  } finally {
+    elements.dashboard.setAttribute('aria-busy', 'false');
+  }
+}
+
+[elements.product, elements.granularity, elements.metric].forEach(control => {
+  control.addEventListener('change', updateChart);
+});
+
+// 原生横向滚动支持触屏滑动和滚动条拖动，每帧最多更新一次图表。
+elements.chartScroll.addEventListener('scroll', () => {
+  if (scrollFrame !== null) return;
+  scrollFrame = requestAnimationFrame(() => {
+    scrollFrame = null;
+    if (!chartView) return;
+    const extent = getScrollExtent();
+    const ratio = extent ? Math.max(0, Math.min(1, elements.chartScroll.scrollLeft / extent)) : 0;
+    chartView.start = Math.round(ratio * getMaxStart());
+    drawVisiblePoints();
+  });
+}, {passive: true});
+
+// 普通鼠标滚轮也能浏览时间轴；到达边缘后允许页面继续正常纵向滚动。
+elements.chartScroll.addEventListener('wheel', event => {
+  if (event.ctrlKey || !getMaxStart()) return;
+  const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+  const multiplier = event.deltaMode === 1 ? 16
+    : event.deltaMode === 2 ? elements.chartScroll.clientWidth : 1;
+  const oldLeft = elements.chartScroll.scrollLeft;
+  const nextLeft = Math.max(0, Math.min(getScrollExtent(), oldLeft + delta * multiplier));
+  if (Math.abs(nextLeft - oldLeft) > 0.01) {
+    event.preventDefault();
+    elements.chartScroll.scrollLeft = nextLeft;
+  }
+}, {passive: false});
+
+elements.chartScroll.addEventListener('keydown', event => {
+  if (!chartView || event.target !== elements.chartScroll || event.ctrlKey || event.metaKey || event.altKey) return;
+  const page = Math.max(1, chartView.count - 1);
+  const targets = {
+    ArrowLeft: chartView.start - 1, ArrowRight: chartView.start + 1,
+    PageUp: chartView.start - page, PageDown: chartView.start + page,
+    Home: 0, End: getMaxStart()
+  };
+  if (!(event.key in targets)) return;
+  event.preventDefault();
+  scrollToStart(targets[event.key]);
+  drawVisiblePoints();
+});
+
+function scheduleChartResize() {
+  if (resizeFrame !== null) return;
+  resizeFrame = requestAnimationFrame(() => {
+    resizeFrame = null;
+    if (!priceChart || !chartView) return;
+    layoutViewport();
+    priceChart.resize();
+    drawVisiblePoints(true);
+  });
+}
+
+// 观察固定外层，避免画布改变自身父元素尺寸而产生 resize 循环。
+if (typeof ResizeObserver !== 'undefined') {
+  const chartResizeObserver = new ResizeObserver(scheduleChartResize);
+  chartResizeObserver.observe(elements.chartWrap);
+} else {
+  window.addEventListener('resize', scheduleChartResize);
+}
+
+initializeDashboard();
+</script>
+</body>
+</html>
