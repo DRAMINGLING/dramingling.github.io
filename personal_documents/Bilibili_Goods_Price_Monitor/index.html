@@ -391,10 +391,14 @@ function getLatestTimestamp(records) {
 }
 
 function renderProductSelector() {
+  const collator = new Intl.Collator('zh-CN', {numeric: true, sensitivity: 'base'});
   const options = Array.from(products, ([key, product]) => {
     const name = product.name || `商品 ${product.product_id}`;
-    return new Option(`${name} (${product.product_id})`, key);
-  });
+    return {key, productId: product.product_id, name, label: `${name} (${product.product_id})`};
+  })
+    .sort((a, b) => collator.compare(a.name, b.name)
+      || collator.compare(a.productId, b.productId))
+    .map(item => new Option(item.label, item.key));
   elements.product.replaceChildren(...options);
   elements.product.disabled = products.size === 0;
 }
