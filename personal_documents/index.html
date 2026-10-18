@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>个人文档库</title>
   <script>
     (function(){
@@ -62,6 +63,24 @@
       margin: 30px auto;
       padding: 0 20px;
     }
+    section {
+      margin-bottom: 34px;
+    }
+    section h2 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      color: #444;
+    }
+    .section-description,
+    .section-status {
+      margin: 0 0 14px;
+      font-size: 13px;
+      color: #666;
+      line-height: 1.6;
+    }
+    .section-status:empty {
+      display: none;
+    }
     .file-list {
       display: flex;
       flex-direction: column;
@@ -75,14 +94,17 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 16px;
     }
     .file-info {
       flex: 1;
+      min-width: 0;
     }
     .file-info h3 {
       margin: 0;
       font-size: 18px;
       color: #444;
+      overflow-wrap: anywhere;
     }
     .file-info p {
       margin: 4px 0 0;
@@ -99,6 +121,22 @@
       margin-left: 20px;
       white-space: nowrap;
     }
+    @media (max-width: 560px) {
+      header {
+        align-items: flex-start;
+        gap: 16px;
+      }
+      header h1 {
+        font-size: 20px;
+      }
+      .file-row {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .file-row a {
+        margin-left: 0;
+      }
+    }
   </style>
 </head>
 <body>
@@ -111,58 +149,121 @@
   </header>
 
   <div class="container">
-    <div class="file-list">
-      <!-- 文件行示例 -->
-      <div class="file-row">
-        <div class="file-info">
-          <h3>📂paper_drafts</h3>
-        </div>
-        <a href="https://dramingling.github.io/personal_documents/paper_drafts" target="_blank">查看</a>
-      </div>
-      
-      <div class="file-row">
-        <div class="file-info">
-          <h3>Some Useful Results.pdf</h3>
-        </div>
-        <a href="https://dramingling.github.io/Personal_Documents/Some Useful Results.pdf" target="_blank">查看</a>
-      </div>
-      
-      <div class="file-row">
-        <div class="file-info">
-          <h3>Some Useful Examples.pdf</h3>
-        </div>
-        <a href="https://dramingling.github.io/Personal_Documents/Some Useful Examples.pdf" target="_blank">查看</a>
-      </div>
+    <section aria-labelledby="repository-files-heading">
+      <h2 id="repository-files-heading">存储仓库中的 PDF</h2>
+      <p class="section-description">此列表会自动读取 Personal_Documents 仓库中的 PDF 文件。</p>
+      <p class="section-status" id="repository-file-status" role="status" aria-live="polite">正在读取 PDF 文件…</p>
+      <div class="file-list" id="repository-file-list"></div>
+    </section>
 
-      <div class="file-row">
-        <div class="file-info">
-          <h3>Remark.pdf</h3>
+    <section aria-labelledby="manual-files-heading">
+      <h2 id="manual-files-heading">手动添加的条目</h2>
+      <p class="section-description">需要固定展示的页面或本仓库文件，可复制下方条目并修改名称和链接。</p>
+      <div class="file-list">
+        <!-- 手动条目区：新增条目时复制一个 file-row 区块。 -->
+        <div class="file-row">
+          <div class="file-info">
+            <h3>📂paper_drafts</h3>
+          </div>
+          <a href="https://dramingling.github.io/personal_documents/paper_drafts" target="_blank" rel="noopener noreferrer">查看</a>
         </div>
-        <a href="https://dramingling.github.io/Personal_Documents/Remark.pdf" target="_blank">查看</a>
-      </div>
 
-      <div class="file-row">
-        <div class="file-info">
-          <h3>Chow Varieties.pdf</h3>
+        <div class="file-row">
+          <div class="file-info">
+            <h3>B站会员购监控</h3>
+          </div>
+          <a href="https://dramingling.github.io/personal_documents/Bilibili_Goods_Price_Monitor" target="_blank" rel="noopener noreferrer">查看</a>
         </div>
-        <a href="https://dramingling.github.io/Personal_Documents/Chow Varieties.pdf" target="_blank">查看</a>
-      </div>
 
-      <div class="file-row">
-        <div class="file-info">
-          <h3>B站会员购监控</h3>
+        <div class="file-row">
+          <div class="file-info">
+            <h3>旅行计划.xlsx</h3>
+            <p>2025年旅行计划表</p>
+          </div>
+          <a href="travel_plan.xlsx" target="_blank" rel="noopener noreferrer">查看</a>
         </div>
-        <a href="https://dramingling.github.io/personal_documents/Bilibili_Goods_Price_Monitor" target="_blank">查看</a>
       </div>
-      
-      <div class="file-row">
-        <div class="file-info">
-          <h3>旅行计划.xlsx</h3>
-          <p>2025年旅行计划表</p>
-        </div>
-        <a href="travel_plan.xlsx" target="_blank">查看</a>
-      </div>
-    </div>
+    </section>
   </div>
+
+  <script>
+    (function() {
+      const TREE_URL = "https://api.github.com/repos/DRAMINGLING/Personal_Documents/git/trees/main?recursive=1";
+      const FILE_BASE_URL = "https://dramingling.github.io/Personal_Documents/";
+      const fileList = document.getElementById("repository-file-list");
+      const status = document.getElementById("repository-file-status");
+
+      function encodePath(path) {
+        return path.split("/").map(function(segment) {
+          return encodeURIComponent(segment);
+        }).join("/");
+      }
+
+      function createFileRow(file) {
+        const row = document.createElement("div");
+        row.className = "file-row";
+
+        const info = document.createElement("div");
+        info.className = "file-info";
+
+        const title = document.createElement("h3");
+        const parts = file.path.split("/");
+        title.textContent = parts[parts.length - 1];
+        info.appendChild(title);
+
+        if (parts.length > 1) {
+          const folder = document.createElement("p");
+          folder.textContent = parts.slice(0, -1).join("/");
+          info.appendChild(folder);
+        }
+
+        const link = document.createElement("a");
+        link.href = FILE_BASE_URL + encodePath(file.path);
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = "查看";
+
+        row.appendChild(info);
+        row.appendChild(link);
+        return row;
+      }
+
+      fetch(TREE_URL, {
+        headers: { Accept: "application/vnd.github+json" },
+        cache: "no-store"
+      })
+        .then(function(response) {
+          if (!response.ok) {
+            throw new Error("GitHub API returned " + response.status);
+          }
+          return response.json();
+        })
+        .then(function(data) {
+          if (data.truncated) {
+            throw new Error("Repository file list was truncated");
+          }
+
+          const pdfFiles = data.tree
+            .filter(function(item) {
+              return item.type === "blob" && /\.pdf$/i.test(item.path);
+            })
+            .sort(function(a, b) {
+              return a.path.localeCompare(b.path, "zh-CN", { sensitivity: "base" });
+            });
+
+          pdfFiles.forEach(function(file) {
+            fileList.appendChild(createFileRow(file));
+          });
+
+          status.textContent = pdfFiles.length
+            ? "已自动加载 " + pdfFiles.length + " 个 PDF 文件。"
+            : "存储仓库中暂时没有 PDF 文件。";
+        })
+        .catch(function(error) {
+          console.error("无法读取存储仓库的 PDF 文件列表：", error);
+          status.textContent = "自动列表暂时无法加载，请稍后刷新；下方手动条目仍可使用。";
+        });
+    })();
+  </script>
 </body>
 </html>
