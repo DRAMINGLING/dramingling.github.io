@@ -147,27 +147,12 @@
     </div>
     <button class="logout-btn" onclick="logout()">退出登录</button>
   </header>
-
+  
   <div class="container">
-    <section aria-labelledby="repository-files-heading">
-      <h2 id="repository-files-heading">存储仓库中的 PDF</h2>
-      <p class="section-description">此列表会自动读取 Personal_Documents 仓库中的 PDF 文件。</p>
-      <p class="section-status" id="repository-file-status" role="status" aria-live="polite">正在读取 PDF 文件…</p>
-      <div class="file-list" id="repository-file-list"></div>
-    </section>
-
     <section aria-labelledby="manual-files-heading">
-      <h2 id="manual-files-heading">手动添加的条目</h2>
-      <p class="section-description">需要固定展示的页面或本仓库文件，可复制下方条目并修改名称和链接。</p>
+      <h2 id="manual-files-heading">置顶</h2>
       <div class="file-list">
         <!-- 手动条目区：新增条目时复制一个 file-row 区块。 -->
-        <div class="file-row">
-          <div class="file-info">
-            <h3>📂paper_drafts</h3>
-          </div>
-          <a href="https://dramingling.github.io/personal_documents/paper_drafts" target="_blank" rel="noopener noreferrer">查看</a>
-        </div>
-
         <div class="file-row">
           <div class="file-info">
             <h3>B站会员购监控</h3>
@@ -183,6 +168,12 @@
           <a href="travel_plan.xlsx" target="_blank" rel="noopener noreferrer">查看</a>
         </div>
       </div>
+    </section>
+  
+    <section aria-labelledby="repository-files-heading">
+      <h2 id="repository-files-heading">Personal Documents</h2>
+      <p class="section-status" id="repository-file-status" role="status" aria-live="polite">正在读取 PDF 文件…</p>
+      <div class="file-list" id="repository-file-list"></div>
     </section>
   </div>
 
