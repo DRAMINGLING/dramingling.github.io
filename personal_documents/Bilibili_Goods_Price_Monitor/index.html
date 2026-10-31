@@ -75,6 +75,23 @@
 
     .identity h2 { margin:0; font-size:1.25rem; }
 
+    .star-toggle {
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      padding:8px 12px;
+      border:1px solid #d6a800;
+      border-radius:10px;
+      background:#fffdf3;
+      color:#735900;
+      font:inherit;
+      font-weight:650;
+      cursor:pointer;
+    }
+    .star-toggle[aria-pressed="true"] { background:#fff3bf; }
+    .star-toggle:disabled { cursor:not-allowed; opacity:.55; }
+    .star-status { margin:0 0 12px; font-size:.875rem; }
+
     .stats {
       display:grid;
       grid-template-columns:repeat(3,minmax(0,1fr));
@@ -192,6 +209,11 @@
       <h2 id="product-name">正在加载…</h2>
       <span class="muted" id="product-id"></span>
     </div>
+    <button class="star-toggle" id="star-toggle" type="button" aria-pressed="false" disabled>
+      <span id="star-icon" aria-hidden="true">☆</span>
+      <span id="star-label">重点关注</span>
+    </button>
+    <p class="muted star-status" id="star-status" role="status" aria-live="polite"></p>
     <div class="muted">数据更新时间：<time id="updated-at">—</time></div>
 
     <div class="stats" id="stats" hidden>
@@ -222,6 +244,8 @@
 
 const CONFIG = Object.freeze({
   dataUrl: './data/price_history.json',
+  // 部署 Cloudflare Worker 后填写完整的 /stars API URL。
+  starApiUrl: '',
   timeZone: 'Asia/Shanghai',
   // 普通滚动占位元素也设置上限，避免极长历史突破浏览器的布局尺寸限制。
   maxScrollWidth: 1000000
@@ -242,6 +266,10 @@ const elements = {
   minimum: document.querySelector('#minimum'),
   average: document.querySelector('#average'),
   message: document.querySelector('#message'),
+  starToggle: document.querySelector('#star-toggle'),
+  starIcon: document.querySelector('#star-icon'),
+  starLabel: document.querySelector('#star-label'),
+  starStatus: document.querySelector('#star-status'),
   chartWrap: document.querySelector('#chart-wrap'),
   chartScroll: document.querySelector('#chart-scroll'),
   chartStage: document.querySelector('#chart-stage'),
@@ -251,6 +279,9 @@ const elements = {
 };
 
 let products = new Map();
+let starredProductIds = new Set();
+let starApiAvailable = false;
+const STAR_API_KEY_SESSION_KEY = 'bilibili-goods-star-api-key';
 let priceChart = null;
 let dataUpdatedAt = null;
 let chartView = null;
@@ -273,6 +304,82 @@ async function loadPriceHistory() {
     throw new TypeError('价格历史 JSON 格式错误：顶层应为记录数组');
   }
   return payload;
+}
+
+async function loadStarredProductIds() {
+  if (!CONFIG.starApiUrl) {
+    elements.starStatus.textContent = '星标同步 API 尚未配置。';
+    return;
+  }
+  const response = await fetch(CONFIG.starApiUrl, {cache: 'no-store'});
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const payload = await response.json();
+  if (!Array.isArray(payload.product_ids)) {
+    throw new TypeError('星标 API 响应格式错误');
+  }
+  starredProductIds = new Set(payload.product_ids.map(String));
+  starApiAvailable = true;
+}
+
+function renderStarToggle(product) {
+  const productId = product ? String(product.product_id) : '';
+  const starred = Boolean(productId && starredProductIds.has(productId));
+  elements.starToggle.disabled = !product || !starApiAvailable;
+  elements.starToggle.setAttribute('aria-pressed', String(starred));
+  elements.starIcon.textContent = starred ? '★' : '☆';
+  elements.starLabel.textContent = starred ? '已重点关注' : '设为重点关注';
+}
+
+async function getStarApiKey() {
+  const savedKey = sessionStorage.getItem(STAR_API_KEY_SESSION_KEY);
+  if (savedKey) return savedKey;
+  const enteredKey = window.prompt('请输入星标 API 访问密钥（仅在当前标签页有效）：');
+  return enteredKey ? enteredKey.trim() : '';
+}
+
+async function toggleSelectedProductStar() {
+  const product = products.get(elements.product.value);
+  if (!product || !starApiAvailable) return;
+  const productId = String(product.product_id);
+  const starred = !starredProductIds.has(productId);
+  const apiKey = await getStarApiKey();
+  if (!apiKey) return;
+
+  elements.starToggle.disabled = true;
+  elements.starStatus.textContent = '正在保存星标…';
+  try {
+    const response = await fetch(CONFIG.starApiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({product_id: productId, starred})
+    });
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        sessionStorage.removeItem(STAR_API_KEY_SESSION_KEY);
+      }
+      throw new Error(`HTTP ${response.status}`);
+    }
+    sessionStorage.setItem(STAR_API_KEY_SESSION_KEY, apiKey);
+    const saved = await response.json();
+    if (!Array.isArray(saved.product_ids)) throw new TypeError('星标 API 响应格式错误');
+    starredProductIds = new Set(saved.product_ids.map(String));
+    const dispatchMessage = saved.monitor_dispatched === true
+      ? '已请求立即检查；邮件会在本次工作流处理完后发送。'
+      : saved.monitor_dispatched === false
+        ? '星标已保存，但立即启动失败；可从 GitHub Actions 手动运行检查。'
+        : '星标状态已是当前状态。';
+    elements.starStatus.textContent = starred
+      ? `${dispatchMessage} 价格变化时会发送邮件。`
+      : `${dispatchMessage} 已恢复目标价提醒。`;
+    renderStarToggle(product);
+  } catch (error) {
+    console.error(error);
+    elements.starStatus.textContent = '星标保存失败，请检查 API 密钥与连接后重试。';
+    renderStarToggle(product);
+  }
 }
 
 function parseTimestamp(value) {
@@ -611,6 +718,7 @@ function updateChart() {
   const metric = elements.metric.value;
   const points = product[granularity] || [];
   elements.productName.textContent = product.name || `商品 ${product.product_id}`;
+  renderStarToggle(product);
   elements.productId.textContent = `商品 ID：${product.product_id}（${product.product_type || 'resell'}）`;
   elements.updatedAt.textContent = formatUpdatedAt(dataUpdatedAt);
   const values = validMetricValues(points, metric);
@@ -624,6 +732,13 @@ function updateChart() {
 async function initializeDashboard() {
   try {
     const records = await loadPriceHistory();
+    try {
+      await loadStarredProductIds();
+      if (starApiAvailable) elements.starStatus.textContent = '星标状态已同步。';
+    } catch (starError) {
+      console.error(starError);
+      elements.starStatus.textContent = '星标 API 暂不可用，当前只能查看价格。';
+    }
     products = normalizeProducts(records);
     dataUpdatedAt = getLatestTimestamp(records);
     renderProductSelector();
@@ -653,6 +768,8 @@ async function initializeDashboard() {
 });
 
 // 原生横向滚动支持触屏滑动和滚动条拖动，每帧最多更新一次图表。
+elements.starToggle.addEventListener('click', toggleSelectedProductStar);
+
 elements.chartScroll.addEventListener('scroll', () => {
   if (scrollFrame !== null) return;
   scrollFrame = requestAnimationFrame(() => {
