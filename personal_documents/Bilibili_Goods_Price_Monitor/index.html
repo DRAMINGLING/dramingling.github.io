@@ -363,8 +363,9 @@ async function toggleSelectedProductStar() {
       throw new Error(`HTTP ${response.status}`);
     }
     sessionStorage.setItem(STAR_API_KEY_SESSION_KEY, apiKey);
-    if (starred) starredProductIds.add(productId);
-    else starredProductIds.delete(productId);
+    const saved = await response.json();
+    if (!Array.isArray(saved.product_ids)) throw new TypeError('星标 API 响应格式错误');
+    starredProductIds = new Set(saved.product_ids.map(String));
     elements.starStatus.textContent = starred
       ? '已设为重点关注：价格每次发生变化都会发送邮件。'
       : '已取消重点关注：恢复按目标价格发送提醒。';
