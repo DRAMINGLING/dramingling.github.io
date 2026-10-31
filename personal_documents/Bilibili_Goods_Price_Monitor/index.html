@@ -366,9 +366,14 @@ async function toggleSelectedProductStar() {
     const saved = await response.json();
     if (!Array.isArray(saved.product_ids)) throw new TypeError('星标 API 响应格式错误');
     starredProductIds = new Set(saved.product_ids.map(String));
+    const dispatchMessage = saved.monitor_dispatched === true
+      ? '已请求立即检查；邮件会在本次工作流处理完后发送。'
+      : saved.monitor_dispatched === false
+        ? '星标已保存，但立即启动失败；定时监控仍会检查。'
+        : '星标状态已是当前状态。';
     elements.starStatus.textContent = starred
-      ? '已设为重点关注：价格每次发生变化都会发送邮件。'
-      : '已取消重点关注：恢复按目标价格发送提醒。';
+      ? `${dispatchMessage} 价格变化时会发送邮件。`
+      : `${dispatchMessage} 已恢复目标价提醒。`;
     renderStarToggle(product);
   } catch (error) {
     console.error(error);
