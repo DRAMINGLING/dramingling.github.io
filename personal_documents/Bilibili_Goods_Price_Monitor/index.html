@@ -369,7 +369,7 @@ async function toggleSelectedProductStar() {
     const dispatchMessage = saved.monitor_dispatched === true
       ? '已请求立即检查；邮件会在本次工作流处理完后发送。'
       : saved.monitor_dispatched === false
-        ? '星标已保存，但立即启动失败；定时监控仍会检查。'
+        ? '星标已保存，但立即启动失败；可从 GitHub Actions 手动运行检查。'
         : '星标状态已是当前状态。';
     elements.starStatus.textContent = starred
       ? `${dispatchMessage} 价格变化时会发送邮件。`
