@@ -154,6 +154,92 @@
     .chart-canvas-container canvas { display:block; }
     .chart-hint { margin:10px 0 0; font-size:.875rem; }
 
+
+    .monitor-config { margin-bottom:18px; }
+    .config-heading {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+    }
+    .config-heading h2 { margin:0 0 4px; font-size:1.15rem; }
+    .config-heading p { margin:0; }
+    .config-toggle, .config-button {
+      padding:9px 13px;
+      border:1px solid #cfd6e2;
+      border-radius:10px;
+      background:#fff;
+      color:var(--ink);
+      font:inherit;
+      font-weight:650;
+      cursor:pointer;
+    }
+    .config-toggle:hover, .config-button:hover { border-color:var(--primary); color:#087da4; }
+    .config-toggle:disabled, .config-button:disabled { cursor:not-allowed; opacity:.55; }
+    .config-editor { margin-top:18px; padding-top:18px; border-top:1px solid var(--line); }
+    .config-access {
+      display:grid;
+      grid-template-columns:minmax(220px,1fr) auto;
+      align-items:end;
+      gap:12px;
+    }
+    .config-access input, .config-new-grid input, .config-price-fields input {
+      width:100%;
+      min-width:0;
+      padding:9px 11px;
+      border:1px solid #cfd6e2;
+      border-radius:9px;
+      background:#fff;
+      color:var(--ink);
+      font:inherit;
+    }
+    .config-description { margin:16px 0 10px; }
+    .config-list { display:grid; gap:10px; }
+    .config-row {
+      display:grid;
+      grid-template-columns:minmax(190px,1.4fr) minmax(220px,1.8fr) auto;
+      align-items:center;
+      gap:14px;
+      padding:12px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:#fbfcfe;
+    }
+    .config-product-meta { display:grid; gap:2px; min-width:0; }
+    .config-product-meta strong { overflow-wrap:anywhere; }
+    .config-product-meta small { color:var(--muted); }
+    .config-price-fields {
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(110px,1fr));
+      gap:10px;
+    }
+    .config-price-fields label { font-size:.86rem; font-weight:550; }
+    .config-enabled {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      white-space:nowrap;
+    }
+    .config-enabled input { width:18px; height:18px; accent-color:var(--primary); }
+    .config-new {
+      min-width:0;
+      margin:16px 0 0;
+      padding:14px;
+      border:1px solid var(--line);
+      border-radius:12px;
+    }
+    .config-new legend { padding:0 6px; font-weight:700; }
+    .config-new-grid {
+      display:grid;
+      grid-template-columns:minmax(180px,2fr) minmax(130px,1.2fr) minmax(110px,1fr) auto;
+      align-items:end;
+      gap:10px;
+    }
+    .config-new-grid label { font-size:.86rem; }
+    .config-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+    .config-status { min-height:1.4em; margin:12px 0 0; }
+    .config-status.error { color:#a12626; }
+
     .message {
       margin:18px 0 0;
       padding:12px 14px;
@@ -172,6 +258,15 @@
       .chart-wrap { height:360px; }
       .panel { border-radius:14px; }
     }
+
+    @media (max-width:700px) {
+      .config-heading { align-items:stretch; flex-direction:column; }
+      .config-access { grid-template-columns:1fr; }
+      .config-row { grid-template-columns:1fr; gap:10px; }
+      .config-new-grid { grid-template-columns:1fr; }
+      .config-actions > button { flex:1; }
+    }
+
   </style>
 </head>
 
@@ -181,6 +276,56 @@
     <h1>Bilibili 商品价格历史</h1>
     <div class="subtitle">所有时间与统计区间均为 Asia/Shanghai（UTC+8）</div>
   </header>
+
+  <section class="panel monitor-config" aria-labelledby="config-heading">
+    <div class="config-heading">
+      <div>
+        <h2 id="config-heading">监控管理</h2>
+        <p class="muted">修改目标价格、启停监控，或新增会员购商品。</p>
+      </div>
+      <button class="config-toggle" id="config-toggle" type="button" aria-expanded="false">
+        管理监控商品
+      </button>
+    </div>
+    <div class="config-editor" id="config-editor" hidden>
+      <div class="config-access">
+        <label>
+          Worker 访问密钥
+          <input id="config-api-key" type="password" autocomplete="off" spellcheck="false">
+        </label>
+        <button class="config-button" id="config-load" type="button">读取配置</button>
+      </div>
+      <p class="muted config-status" id="config-status" role="status" aria-live="polite">
+        密钥仅保存在当前标签页会话中。
+      </p>
+      <form id="config-form" hidden>
+        <p class="muted config-description" id="config-description"></p>
+        <div class="config-list" id="config-products"></div>
+        <fieldset class="config-new">
+          <legend>新增监控商品</legend>
+          <div class="config-new-grid">
+            <label>
+              商品名称
+              <input id="new-product-name" type="text" maxlength="160" autocomplete="off">
+            </label>
+            <label>
+              cluster ID
+              <input id="new-product-id" type="text" maxlength="20" inputmode="numeric" autocomplete="off">
+            </label>
+            <label>
+              目标价格（≤ 元）
+              <input id="new-product-price" type="number" min="0" max="10000000" step="0.01">
+            </label>
+            <button class="config-button" id="config-add" type="button">添加到列表</button>
+          </div>
+        </fieldset>
+        <div class="config-actions">
+          <button class="config-button" id="config-save" type="submit">保存监控配置</button>
+          <button class="config-button" id="config-close" type="button">收起</button>
+        </div>
+      </form>
+    </div>
+  </section>
 
   <section class="panel" aria-busy="true" id="dashboard">
     <div class="controls">
@@ -246,6 +391,7 @@ const CONFIG = Object.freeze({
   dataUrl: './data/price_history.json',
   // 部署 Cloudflare Worker 后填写完整的 /stars API URL。
   starApiUrl: 'https://bilibili-goods-star-api.1419211066.workers.dev/stars',
+  configApiUrl: 'https://bilibili-goods-star-api.1419211066.workers.dev/config',
   timeZone: 'Asia/Shanghai',
   // 普通滚动占位元素也设置上限，避免极长历史突破浏览器的布局尺寸限制。
   maxScrollWidth: 1000000
@@ -270,6 +416,20 @@ const elements = {
   starIcon: document.querySelector('#star-icon'),
   starLabel: document.querySelector('#star-label'),
   starStatus: document.querySelector('#star-status'),
+  configToggle: document.querySelector('#config-toggle'),
+  configEditor: document.querySelector('#config-editor'),
+  configKey: document.querySelector('#config-api-key'),
+  configLoad: document.querySelector('#config-load'),
+  configForm: document.querySelector('#config-form'),
+  configProducts: document.querySelector('#config-products'),
+  configDescription: document.querySelector('#config-description'),
+  configStatus: document.querySelector('#config-status'),
+  configAdd: document.querySelector('#config-add'),
+  configSave: document.querySelector('#config-save'),
+  configClose: document.querySelector('#config-close'),
+  newProductName: document.querySelector('#new-product-name'),
+  newProductId: document.querySelector('#new-product-id'),
+  newProductPrice: document.querySelector('#new-product-price'),
   chartWrap: document.querySelector('#chart-wrap'),
   chartScroll: document.querySelector('#chart-scroll'),
   chartStage: document.querySelector('#chart-stage'),
@@ -280,6 +440,7 @@ const elements = {
 
 let products = new Map();
 let starredProductIds = new Set();
+let monitorConfigProducts = [];
 let starApiAvailable = false;
 const STAR_API_KEY_SESSION_KEY = 'bilibili-goods-star-api-key';
 let priceChart = null;
@@ -367,13 +528,248 @@ async function toggleSelectedProductStar() {
     if (!Array.isArray(saved.product_ids)) throw new TypeError('星标 API 响应格式错误');
     starredProductIds = new Set(saved.product_ids.map(String));
     elements.starStatus.textContent = starred
-      ? '星标已保存。价格变化会在下次手动运行监控工作流时检查并发送邮件。'
-      : '星标已取消；下次手动运行时恢复目标价提醒。';
+      ? '星标已保存。价格变化会在下次监控工作流运行时检查并发送邮件。'
+      : '星标已取消；下次监控工作流运行时恢复目标价提醒。';
     renderStarToggle(product);
   } catch (error) {
     console.error(error);
     elements.starStatus.textContent = '星标保存失败，请检查 API 密钥与连接后重试。';
     renderStarToggle(product);
+  }
+}
+
+
+function setMonitorConfigStatus(message, isError = false) {
+  elements.configStatus.textContent = message;
+  elements.configStatus.classList.toggle("error", isError);
+}
+
+function conditionLabel(type) {
+  return ({lte: "≤ 目标价", lt: "< 目标价", gte: "≥ 目标价", gt: "> 目标价", range: "价格区间"})[type]
+    || "≤ 目标价";
+}
+
+function makePriceInput(labelText, value, className) {
+  const label = document.createElement("label");
+  label.append(document.createTextNode(labelText));
+  const input = document.createElement("input");
+  input.type = "number";
+  input.min = "0";
+  input.max = "10000000";
+  input.step = "0.01";
+  input.required = true;
+  input.value = String(value);
+  input.className = className;
+  label.append(input);
+  return label;
+}
+
+function renderMonitorConfigProducts() {
+  const rows = monitorConfigProducts.map(product => {
+    const row = document.createElement("article");
+    row.className = "config-row config-item";
+    row.dataset.clusterId = String(product.cluster_id);
+
+    const meta = document.createElement("div");
+    meta.className = "config-product-meta";
+    const name = document.createElement("strong");
+    name.textContent = product.name || ("商品 " + product.cluster_id);
+    const id = document.createElement("small");
+    id.textContent = "cluster ID: " + product.cluster_id;
+    meta.append(name, id);
+
+    const priceFields = document.createElement("div");
+    priceFields.className = "config-price-fields";
+    const condition = product.condition || {type: "lte", price: 0};
+    if (condition.type === "range") {
+      priceFields.append(
+        makePriceInput("最低价（元）", condition.min, "config-min"),
+        makePriceInput("最高价（元）", condition.max, "config-max")
+      );
+    } else {
+      priceFields.append(
+        makePriceInput(conditionLabel(condition.type), condition.price, "config-price")
+      );
+    }
+
+    const enabledLabel = document.createElement("label");
+    enabledLabel.className = "config-enabled";
+    const enabled = document.createElement("input");
+    enabled.type = "checkbox";
+    enabled.checked = product.enabled !== false;
+    enabled.className = "config-enabled-input";
+    enabledLabel.append(enabled, document.createTextNode("启用监控"));
+
+    row.append(meta, priceFields, enabledLabel);
+    return row;
+  });
+  elements.configProducts.replaceChildren(...rows);
+}
+
+function getEditedMonitorProducts() {
+  return Array.from(elements.configProducts.querySelectorAll(".config-item")).map(row => {
+    const product = monitorConfigProducts.find(item =>
+      String(item.cluster_id) === row.dataset.clusterId
+    );
+    if (!product) throw new Error("配置列表已变化，请重新读取。");
+    const condition = {...product.condition};
+    if (condition.type === "range") {
+      condition.min = Number(row.querySelector(".config-min").value);
+      condition.max = Number(row.querySelector(".config-max").value);
+    } else {
+      condition.price = Number(row.querySelector(".config-price").value);
+    }
+    return {
+      name: product.name,
+      cluster_id: String(product.cluster_id),
+      enabled: row.querySelector(".config-enabled-input").checked,
+      condition
+    };
+  });
+}
+
+async function loadMonitorConfig() {
+  const key = elements.configKey.value.trim()
+    || sessionStorage.getItem(STAR_API_KEY_SESSION_KEY)
+    || "";
+  if (!key) {
+    setMonitorConfigStatus("请输入 Worker 访问密钥后读取配置。", true);
+    elements.configKey.focus();
+    return;
+  }
+
+  elements.configLoad.disabled = true;
+  elements.configSave.disabled = true;
+  setMonitorConfigStatus("正在读取监控配置…");
+  try {
+    const response = await fetch(CONFIG.configApiUrl, {
+      method: "GET",
+      headers: {Authorization: "Bearer " + key},
+      cache: "no-store"
+    });
+    if (response.status === 401 || response.status === 403) {
+      sessionStorage.removeItem(STAR_API_KEY_SESSION_KEY);
+      throw new Error("访问密钥无效，或当前网页来源未获 Worker 允许。");
+    }
+    if (!response.ok) throw new Error("Worker 请求失败（HTTP " + response.status + "）。");
+    const payload = await response.json();
+    if (!Array.isArray(payload.products)) throw new TypeError("配置响应格式错误。");
+
+    monitorConfigProducts = payload.products.map(product => ({
+      name: String(product.name || ""),
+      cluster_id: String(product.cluster_id || ""),
+      enabled: product.enabled !== false,
+      condition: product.condition?.type === "range"
+        ? {type: "range", min: Number(product.condition.min), max: Number(product.condition.max)}
+        : {
+            type: String(product.condition?.type || "lte"),
+            price: Number(product.condition?.price)
+          }
+    }));
+    sessionStorage.setItem(STAR_API_KEY_SESSION_KEY, key);
+    elements.configKey.value = key;
+    elements.configForm.hidden = false;
+    elements.configDescription.textContent =
+      "共 " + monitorConfigProducts.length +
+      " 项。保存后会更新 GitHub 配置，监控任务将在下次运行时使用新设置。";
+    renderMonitorConfigProducts();
+    setMonitorConfigStatus("配置读取成功。");
+  } catch (error) {
+    console.error(error);
+    setMonitorConfigStatus(error.message || "无法读取监控配置，请检查密钥与连接。", true);
+  } finally {
+    elements.configLoad.disabled = false;
+    elements.configSave.disabled = false;
+  }
+}
+
+function addMonitorProduct() {
+  const name = elements.newProductName.value.trim();
+  const clusterId = elements.newProductId.value.trim();
+  const priceText = elements.newProductPrice.value.trim();
+  const price = Number(priceText);
+  if (!name || name.length > 160 || !/^\d{1,20}$/.test(clusterId) ||
+      !priceText || !Number.isFinite(price) || price < 0 || price > 10000000) {
+    setMonitorConfigStatus("请填写有效的商品名称、1–20 位 cluster ID 和 0–10000000 元目标价。", true);
+    return;
+  }
+  if (monitorConfigProducts.some(product => String(product.cluster_id) === clusterId)) {
+    setMonitorConfigStatus("这个 cluster ID 已在监控列表中，请直接修改现有条目。", true);
+    return;
+  }
+
+  monitorConfigProducts.push({
+    name,
+    cluster_id: clusterId,
+    enabled: true,
+    condition: {type: "lte", price}
+  });
+  renderMonitorConfigProducts();
+  elements.newProductName.value = "";
+  elements.newProductId.value = "";
+  elements.newProductPrice.value = "";
+  setMonitorConfigStatus("商品已加入待保存列表；点击“保存监控配置”后生效。");
+}
+
+async function saveMonitorConfig(event) {
+  event.preventDefault();
+  if (!elements.configForm.reportValidity()) return;
+
+  const key = elements.configKey.value.trim()
+    || sessionStorage.getItem(STAR_API_KEY_SESSION_KEY)
+    || "";
+  if (!key) {
+    setMonitorConfigStatus("请先读取配置并输入 Worker 访问密钥。", true);
+    return;
+  }
+
+  elements.configSave.disabled = true;
+  elements.configLoad.disabled = true;
+  setMonitorConfigStatus("正在保存监控配置…");
+  try {
+    const products = getEditedMonitorProducts();
+    const response = await fetch(CONFIG.configApiUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + key
+      },
+      body: JSON.stringify({products})
+    });
+    if (response.status === 401 || response.status === 403) {
+      sessionStorage.removeItem(STAR_API_KEY_SESSION_KEY);
+      throw new Error("访问密钥无效，或当前网页来源未获 Worker 允许。");
+    }
+    if (!response.ok) throw new Error("Worker 保存失败（HTTP " + response.status + "）。");
+    const payload = await response.json();
+    if (!Array.isArray(payload.products)) throw new TypeError("配置响应格式错误。");
+
+    monitorConfigProducts = payload.products;
+    renderMonitorConfigProducts();
+    elements.configDescription.textContent =
+      "共 " + monitorConfigProducts.length +
+      " 项。保存后会更新 GitHub 配置，监控任务将在下次运行时使用新设置。";
+    sessionStorage.setItem(STAR_API_KEY_SESSION_KEY, key);
+    setMonitorConfigStatus("保存成功。监控配置已更新。");
+  } catch (error) {
+    console.error(error);
+    setMonitorConfigStatus(error.message || "保存失败，请稍后重试。", true);
+  } finally {
+    elements.configSave.disabled = false;
+    elements.configLoad.disabled = false;
+  }
+}
+
+function toggleMonitorConfig() {
+  const opening = elements.configEditor.hidden;
+  elements.configEditor.hidden = !opening;
+  elements.configToggle.setAttribute("aria-expanded", String(opening));
+  if (!opening) return;
+
+  const savedKey = sessionStorage.getItem(STAR_API_KEY_SESSION_KEY);
+  if (savedKey) {
+    elements.configKey.value = savedKey;
+    if (elements.configForm.hidden) loadMonitorConfig();
   }
 }
 
@@ -764,6 +1160,13 @@ async function initializeDashboard() {
 
 // 原生横向滚动支持触屏滑动和滚动条拖动，每帧最多更新一次图表。
 elements.starToggle.addEventListener('click', toggleSelectedProductStar);
+
+elements.configToggle.addEventListener("click", toggleMonitorConfig);
+elements.configLoad.addEventListener("click", loadMonitorConfig);
+elements.configAdd.addEventListener("click", addMonitorProduct);
+elements.configClose.addEventListener("click", toggleMonitorConfig);
+elements.configForm.addEventListener("submit", saveMonitorConfig);
+
 
 elements.chartScroll.addEventListener('scroll', () => {
   if (scrollFrame !== null) return;
