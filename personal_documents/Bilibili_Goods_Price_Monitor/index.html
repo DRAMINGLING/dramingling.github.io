@@ -765,7 +765,6 @@ function toggleMonitorConfig() {
 
   const savedKey = sessionStorage.getItem(STAR_API_KEY_SESSION_KEY);
   if (savedKey) {
-    elements.configKey.value = savedKey;
     if (elements.configForm.hidden) loadMonitorConfig();
   }
 }
