@@ -42,16 +42,38 @@
       background:var(--surface);
       transition:box-shadow .18s ease;
     }
-    .quick-access-title { display:none; }
+    .quick-access-title {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:9px;
+      height:38px;
+      margin:0 0 16px;
+      color:var(--muted);
+      font-size:.85rem;
+      font-weight:750;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+    }
+    .quick-access-title-label { display:none; white-space:nowrap; }
     .quick-access-mark {
-      display:grid;
+      display:flex;
+      flex:0 0 auto;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:3px;
       width:30px;
       height:30px;
-      place-items:center;
-      border-radius:9px;
-      background:#e5f7fc;
-      color:#087da4;
-      font-size:1rem;
+      border-radius:8px;
+      background:#11131d;
+    }
+    .quick-access-mark span {
+      display:block;
+      width:14px;
+      height:2px;
+      border-radius:2px;
+      background:#d8deea;
     }
     .quick-access-nav { display:grid; gap:8px; }
     .quick-access-link {
@@ -115,15 +137,12 @@
       }
       body:has(.quick-access:hover) .quick-access-title,
       body:has(.quick-access:focus-within) .quick-access-title {
-        display:flex;
-        align-items:center;
-        gap:9px;
+        justify-content:flex-start;
         margin:0 8px 16px;
-        color:var(--muted);
-        font-size:.85rem;
-        font-weight:750;
-        letter-spacing:.04em;
-        text-transform:uppercase;
+      }
+      body:has(.quick-access:hover) .quick-access-title-label,
+      body:has(.quick-access:focus-within) .quick-access-title-label {
+        display:block;
       }
       body:has(.quick-access:hover) .quick-access-link,
       body:has(.quick-access:focus-within) .quick-access-link {
@@ -383,13 +402,16 @@
       .quick-access-title {
         display:flex;
         align-items:center;
+        justify-content:flex-start;
         gap:9px;
+        height:38px;
         margin:0;
         color:var(--muted);
         font-size:.85rem;
         font-weight:750;
         white-space:nowrap;
       }
+      .quick-access-title-label { display:block; }
       .quick-access-nav { display:flex; min-width:0; }
       .quick-access-link {
         justify-content:flex-start;
@@ -428,8 +450,10 @@
 <body>
 <aside class="quick-access" aria-label="快捷访问">
   <div class="quick-access-title">
-    <span class="quick-access-mark" aria-hidden="true">↗</span>
-    <span><strong>快捷访问</strong></span>
+    <span class="quick-access-mark" aria-hidden="true">
+      <span></span><span></span><span></span>
+    </span>
+    <span class="quick-access-title-label"><strong>快捷访问</strong></span>
   </div>
   <nav class="quick-access-nav" aria-label="快捷访问链接">
     <a class="quick-access-link"
