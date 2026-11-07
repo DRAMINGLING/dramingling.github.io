@@ -180,10 +180,10 @@
     .config-access {
       display:grid;
       grid-template-columns:minmax(220px,1fr) auto;
-      align-items:end;
+      align-items:center;
       gap:12px;
     }
-    .config-access input, .config-new-grid input, .config-price-fields input {
+    .config-new-grid input, .config-price-fields input {
       width:100%;
       min-width:0;
       padding:9px 11px;
@@ -289,10 +289,7 @@
     </div>
     <div class="config-editor" id="config-editor" hidden>
       <div class="config-access">
-        <label>
-          访问密钥
-          <input id="config-api-key" type="password" autocomplete="off" spellcheck="false">
-        </label>
+        <p class="muted">首次读取时会弹出密钥输入框；密钥仅在当前标签页会话中缓存。</p>
         <button class="config-button" id="config-load" type="button">读取配置</button>
       </div>
       <p class="muted config-status" id="config-status" role="status" aria-live="polite">
@@ -418,7 +415,6 @@ const elements = {
   starStatus: document.querySelector('#star-status'),
   configToggle: document.querySelector('#config-toggle'),
   configEditor: document.querySelector('#config-editor'),
-  configKey: document.querySelector('#config-api-key'),
   configLoad: document.querySelector('#config-load'),
   configForm: document.querySelector('#config-form'),
   configProducts: document.querySelector('#config-products'),
@@ -628,13 +624,17 @@ function getEditedMonitorProducts() {
   });
 }
 
+async function getMonitorConfigApiKey() {
+  const savedKey = sessionStorage.getItem(STAR_API_KEY_SESSION_KEY);
+  if (savedKey) return savedKey;
+  const enteredKey = window.prompt("请输入监控管理 API 访问密钥（仅在当前标签页有效）：");
+  return enteredKey ? enteredKey.trim() : "";
+}
+
 async function loadMonitorConfig() {
-  const key = elements.configKey.value.trim()
-    || sessionStorage.getItem(STAR_API_KEY_SESSION_KEY)
-    || "";
+  const key = await getMonitorConfigApiKey();
   if (!key) {
-    setMonitorConfigStatus("请输入 Worker 访问密钥后读取配置。", true);
-    elements.configKey.focus();
+    setMonitorConfigStatus("已取消密钥输入。");
     return;
   }
 
@@ -667,7 +667,6 @@ async function loadMonitorConfig() {
           }
     }));
     sessionStorage.setItem(STAR_API_KEY_SESSION_KEY, key);
-    elements.configKey.value = key;
     elements.configForm.hidden = false;
     elements.configDescription.textContent =
       "共 " + monitorConfigProducts.length +
@@ -715,11 +714,9 @@ async function saveMonitorConfig(event) {
   event.preventDefault();
   if (!elements.configForm.reportValidity()) return;
 
-  const key = elements.configKey.value.trim()
-    || sessionStorage.getItem(STAR_API_KEY_SESSION_KEY)
-    || "";
+  const key = await getMonitorConfigApiKey();
   if (!key) {
-    setMonitorConfigStatus("请先读取配置并输入 Worker 访问密钥。", true);
+    setMonitorConfigStatus("已取消密钥输入。");
     return;
   }
 
@@ -768,7 +765,6 @@ function toggleMonitorConfig() {
 
   const savedKey = sessionStorage.getItem(STAR_API_KEY_SESSION_KEY);
   if (savedKey) {
-    elements.configKey.value = savedKey;
     if (elements.configForm.hidden) loadMonitorConfig();
   }
 }
