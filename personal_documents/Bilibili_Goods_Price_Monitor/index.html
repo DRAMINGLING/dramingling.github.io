@@ -81,7 +81,10 @@
       align-items:center;
       justify-content:center;
       min-width:0;
-      min-height:54px;
+      width:100%;
+      height:56px;
+      min-height:56px;
+      max-height:56px;
       padding:8px 0;
       border:1px solid transparent;
       border-radius:12px;
@@ -122,7 +125,26 @@
       place-items:center;
       font-size:1.2rem;
     }
-    .quick-access-label { display:none; min-width:0; gap:1px; }
+    .quick-access-label {
+      display:none;
+      flex:1 1 0;
+      grid-template-rows:18px 18px;
+      align-content:center;
+      min-width:0;
+      height:38px;
+      gap:1px;
+    }
+    .quick-access-label strong,
+    .quick-access-label small {
+      display:block;
+      width:100%;
+      min-width:0;
+      height:18px;
+      overflow:hidden;
+      line-height:18px;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
     .quick-access-label strong { font-size:.95rem; }
     .quick-access-label small { color:var(--muted); font-size:.76rem; }
 
@@ -416,9 +438,22 @@
       .quick-access-link {
         justify-content:flex-start;
         gap:10px;
+        width:auto;
+        height:48px;
+        min-height:48px;
+        max-height:48px;
         padding:6px 9px;
       }
-      .quick-access-label { display:grid; }
+      .quick-access-label {
+        display:grid;
+        height:34px;
+        grid-template-rows:16px 17px;
+      }
+      .quick-access-label strong,
+      .quick-access-label small {
+        height:17px;
+        line-height:17px;
+      }
       .quick-access-icon { width:34px; height:34px; }
       main { width:min(1120px,calc(100% - 28px)); }
     }
@@ -470,7 +505,7 @@
       </span>
       <span class="quick-access-label">
         <strong>集市搜索</strong>
-        <small>Bilibili 市集商品搜索</small>
+        <small title="Bilibili 市集商品搜索">Bilibili 市集商品搜索</small>
       </span>
     </a>
   </nav>
