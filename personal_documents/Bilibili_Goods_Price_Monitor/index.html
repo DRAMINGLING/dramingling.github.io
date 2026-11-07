@@ -20,10 +20,85 @@
     * { box-sizing:border-box; }
 
     body {
+      display:grid;
+      grid-template-columns:minmax(190px,220px) minmax(0,1fr);
+      min-height:100vh;
       margin:0;
       color:var(--ink);
       background:var(--bg);
       font:15px/1.55 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+    }
+
+
+    .quick-access {
+      position:sticky;
+      top:0;
+      height:100vh;
+      padding:22px 12px;
+      border-right:1px solid var(--line);
+      background:var(--surface);
+    }
+    .quick-access-title {
+      display:flex;
+      align-items:center;
+      gap:9px;
+      margin:0 8px 16px;
+      color:var(--muted);
+      font-size:.85rem;
+      font-weight:750;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+    }
+    .quick-access-mark {
+      display:grid;
+      width:30px;
+      height:30px;
+      place-items:center;
+      border-radius:9px;
+      background:#e5f7fc;
+      color:#087da4;
+      font-size:1rem;
+      letter-spacing:0;
+    }
+    .quick-access-nav { display:grid; gap:8px; }
+    .quick-access-link {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+      padding:11px 10px;
+      border:1px solid transparent;
+      border-radius:12px;
+      color:var(--ink);
+      text-decoration:none;
+      transition:background .15s ease,border-color .15s ease,transform .15s ease;
+    }
+    .quick-access-link:hover {
+      border-color:#cdeef6;
+      background:#f1fbfe;
+      transform:translateY(-1px);
+    }
+    .quick-access-link:focus-visible {
+      outline:2px solid var(--primary);
+      outline-offset:2px;
+    }
+    .quick-access-icon {
+      display:grid;
+      width:38px;
+      height:38px;
+      flex:0 0 auto;
+      place-items:center;
+      border-radius:11px;
+      background:#e5f7fc;
+      font-size:1.2rem;
+    }
+    .quick-access-label { display:grid; min-width:0; gap:1px; }
+    .quick-access-label strong { font-size:.95rem; }
+    .quick-access-label small { color:var(--muted); font-size:.76rem; }
+    .quick-access-external {
+      margin-left:auto;
+      color:var(--muted);
+      font-size:.9rem;
     }
 
     main {
@@ -251,6 +326,34 @@
     .message.error { background:#fff0f0; color:#a12626; }
     [hidden] { display:none !important; }
 
+
+    @media (max-width:900px) {
+      body { grid-template-columns:minmax(0,1fr); }
+      .quick-access {
+        z-index:20;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        width:100%;
+        height:auto;
+        padding:9px 14px;
+        border-right:0;
+        border-bottom:1px solid var(--line);
+        box-shadow:0 4px 14px rgb(20 40 80 / 5%);
+      }
+      .quick-access-title { margin:0; white-space:nowrap; }
+      .quick-access-nav { display:flex; min-width:0; }
+      .quick-access-link { padding:6px 9px; }
+      .quick-access-icon { width:34px; height:34px; }
+      main { width:min(1120px,calc(100% - 28px)); }
+    }
+    @media (max-width:520px) {
+      .quick-access-label small { display:none; }
+      .quick-access-link { gap:7px; padding:5px 7px; }
+      .quick-access-icon { width:30px; height:30px; }
+    }
+
     @media (max-width:700px) {
       main { margin:18px auto; }
       .controls { grid-template-columns:1fr; }
@@ -271,6 +374,27 @@
 </head>
 
 <body>
+<aside class="quick-access" aria-label="快捷访问">
+  <div class="quick-access-title">
+    <span class="quick-access-mark" aria-hidden="true">↗</span>
+    <span>快捷访问</span>
+  </div>
+  <nav class="quick-access-nav" aria-label="快捷访问链接">
+    <a class="quick-access-link"
+       href="https://www.bili-market-boss.top/#/"
+       target="_blank"
+       rel="noopener noreferrer"
+       aria-label="在新标签页打开集市搜索">
+      <span class="quick-access-icon" aria-hidden="true">🛒</span>
+      <span class="quick-access-label">
+        <strong>集市搜索</strong>
+        <small>Bilibili 市集商品搜索</small>
+      </span>
+      <span class="quick-access-external" aria-hidden="true">↗</span>
+    </a>
+  </nav>
+</aside>
+
 <main>
   <header>
     <h1>Bilibili 商品价格历史</h1>
